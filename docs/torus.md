@@ -22,3 +22,24 @@ generically unstable and the attractor turns strange directly):
 This is why F=4.6 and F=5 "look QP": the strange attractor inherits the torus geometry
 (D2 barely above 2, section barely above a loop) while the dynamics on it are already
 exponentially divergent — the spectrum, not the geometry, makes the call.
+
+## The route in the 8-panel diagnostics
+
+Generated with `python -m ntsa.characterize --model lorenz96 --param F --values ...`
+(Nx = 10). On the torus side of the route, the delay portrait fills a surface, the
+Poincaré section closes into a loop, and the spectrum shows two neutral exponents;
+past breakdown the section stays loop-like long after λ1 turns positive.
+
+**F = 2 → 4.06 — limit cycles and locking.** Period-1 orbits (D_KY = 1, single
+return-map cluster), then a period-3 window at F = 4 and a locked state at
+F = 4.06 (f₂/f₁ ≈ 1/2, D_KY = 1.43):
+
+![Lorenz96 F-route, page 1: F = 2, 3.6, 4, 4.06](assets/ntsa_lorenz96_Froute_page-01.png)
+
+**F = 4.3 → 8 — torus, breakdown, developed chaos.** The 2-torus at F = 4.3
+(quasiperiodic, D_KY = 1.94, loop-shaped section), the wrinkled-torus chaos at
+F = 4.6 (λ1 = 0.040) and F = 5 (λ1 = 0.083) where the section still looks like a
+thickened loop, and developed chaos at F = 8 (three positive exponents,
+D_KY = 6.51):
+
+![Lorenz96 F-route, page 2: F = 4.3, 4.6, 5, 8](assets/ntsa_lorenz96_Froute_page-02.png)
