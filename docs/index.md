@@ -1,4 +1,4 @@
-# ntsa
+# ntsa — nonlinear time-series analysis
 
 Characterizes the dynamical regime of a model from a single long trajectory:
 delay embedding (optimal lag + false nearest neighbours), Lyapunov exponents, regime
