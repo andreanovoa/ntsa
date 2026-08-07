@@ -18,9 +18,7 @@ and a per-case diagnostic figure — one row of 8 panels
 ## Install
 
 ```bash
-pip install ntsa            # once released; until then (dynamodels is not on PyPI yet either):
-pip install "dynamodels @ git+https://github.com/andreanovoa/dynamodels" \
-            "ntsa @ git+https://github.com/andreanovoa/ntsa"
+pip install ntsa
 ```
 
 ## Quickstart
