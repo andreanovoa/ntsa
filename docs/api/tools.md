@@ -20,7 +20,7 @@
 | `signal_stats(x, dt, n_bins=64)` | Dict of moments, PSD, PDF and ACF. |
 | `classical_mds(X, n_coords=3, nmax=2000)` | Classical MDS coordinates $\gamma$ of the state trajectory (subsampled). |
 | `classify_regime(x, dt, lam1=None, ...)` | `(label, evidence)` — see decision tree below. |
-| `bifurcation_sweep(model, param, values, ...)` | Serial parameter sweep collecting observable extrema (continuation optional). |
+| `bifurcation_sweep(model, param, values, ...)` | Parameter sweep collecting observable extrema: one ensemble forecast — member `k` at `values[k]` — by default, or serial branch-following with `continuation=True`. |
 | `plot_bifurcation(values, peaks, ...)` | Bifurcation diagram from `bifurcation_sweep` output. |
 
 

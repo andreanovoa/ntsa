@@ -488,11 +488,17 @@ def classify_regime(x, dt, lam1=None, lam1_std=0.0, t_total=None, k_max=8, clust
 # ---------------------------------------------------------------------------
 
 def bifurcation_sweep(model, param, values, dt=None, t_transient=None, t_sample=None,
-                      extrema=('max',), continuation=True, seed=0, **overrides):
+                      extrema=('max',), continuation=False, seed=0, **overrides):
     """Sweep `param` over `values`, collecting local extrema of every observable.
 
-    Serial (m=1) loop; with `continuation`, each run starts from the previous
-    endpoint plus a small perturbation.
+    By default the whole sweep is ONE ensemble forecast: every parameter value
+    shares the same initial state, `param` is augmented into the state
+    (``init_ensemble(est_alpha=[param])``) and member `k` integrates at
+    ``values[k]`` — the integrator parallelizes across parameter values in a
+    single run. With ``continuation=True`` it falls back to a serial m=1 loop
+    where each run starts from the previous endpoint plus a small perturbation —
+    the classic way to follow an attractor branch (e.g. through a hysteresis),
+    and inherently sequential.
 
     Returns
     -------
@@ -507,16 +513,39 @@ def bifurcation_sweep(model, param, values, dt=None, t_transient=None, t_sample=
     values = np.asarray(values, dtype=float)
     psi0 = model.psi0[:, 0] + 1e-3 * rng.standard_normal(model.Nphi)
     peaks = {ext: [[] for _ in range(model.Nq)] for ext in extrema}
-    for val in tqdm(values, desc=f'{param} sweep'):
-        mi = respawn(model, psi0=psi0, dt=dt, **{param: val}, **overrides)
-        _, y, psi = run_long(mi, t_run=t_sample or 20 * mi.t_CR, t_transient=t_transient)
+
+    def collect(y_k, trim=False):
+        i0 = stationary_start(y_k[:, 0]) if trim else 0
         for ext in extrema:
             sign = 1.0 if ext == 'max' else -1.0
-            for iq in range(mi.Nq):
-                idx, _ = find_peaks(sign * y[:, iq])
-                peaks[ext][iq].append(y[idx, iq])
-        if continuation:
+            for iq in range(y_k.shape[1]):
+                idx, _ = find_peaks(sign * y_k[i0:, iq])
+                peaks[ext][iq].append(y_k[i0 + idx, iq])
+
+    if continuation:
+        for val in tqdm(values, desc=f'{param} sweep'):
+            mi = respawn(model, psi0=psi0, dt=dt, **{param: val}, **overrides)
+            _, y, psi = run_long(mi, t_run=t_sample or 20 * mi.t_CR, t_transient=t_transient)
+            collect(y)   # run_long already trimmed the residual transient
             psi0 = psi[-1] + 1e-6 * rng.standard_normal(model.Nphi)
+        return values, peaks
+
+    # identical ICs: one ensemble run, member k carrying values[k] as its parameter
+    mi = respawn(model, psi0=psi0, dt=dt, **overrides)
+    aug = np.vstack([np.tile(psi0[:, None], (1, values.size)), values[None, :]])
+    mi.init_ensemble(m=values.size, est_alpha=[param], ensemble_psi0=aug)
+    if t_transient is None:
+        t_transient = mi.t_transient
+    Nt_tr = int(round(t_transient / mi.dt))
+    if Nt_tr > 0:
+        psi, _ = mi.time_integrate(Nt=Nt_tr)
+        mi.update_history(psi[-1:], t=np.array([0.]), reset=True)
+    psi, tt = mi.time_integrate(int(round((t_sample or 20 * mi.t_CR) / mi.dt)))
+    mi.update_history(psi, tt)
+    mi.close()
+    y = mi.get_observable_hist()                     # (Nt, Nq, m)
+    for k in range(values.size):
+        collect(y[:, :, k], trim=True)               # per-member residual-transient trim
     return values, peaks
 
 

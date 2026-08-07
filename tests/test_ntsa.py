@@ -236,6 +236,21 @@ def test_bifurcation_smoke():
 
 
 
+def test_bifurcation_ensemble():
+    # the default sweep is ONE ensemble forecast: member k at values[k]
+    model = _l63_model()
+    vals = [20., 28., 35.]
+    values, peaks = ntsa_tools.bifurcation_sweep(model, 'rho', vals,
+                                                 t_transient=5., t_sample=10.)
+    assert all(len(per_obs) == 3 for per_obs in peaks['max'])
+    i28 = int(np.argmin(np.abs(values - 28.)))
+    assert peaks['max'][0][i28].size > 0, 'no maxima collected at rho=28'
+    # rho=20 is a fixed point, rho=28 chaotic: their extrema must differ
+    assert peaks['max'][0][0].size != peaks['max'][0][i28].size or not np.allclose(
+        peaks['max'][0][0].mean(), peaks['max'][0][i28].mean()), \
+        'members look identical — per-member parameters were not applied'
+
+
 def test_correlation_dimension_poincare():
     t = np.arange(0, 400, 0.05)
     D2c, _ = ntsa_tools.correlation_dimension(np.column_stack([np.cos(t), np.sin(t)]))
@@ -282,7 +297,7 @@ TESTS = [test_ami_fnn_sine, test_delay_embed_recurrence, test_stationary_start,
          test_l63_fnn, test_classify,
          test_respawn_observation,
          test_correlation_dimension_poincare, test_kaplan_yorke,
-         test_bifurcation_smoke, test_mds_smoke]
+         test_bifurcation_smoke, test_bifurcation_ensemble, test_mds_smoke]
 
 if __name__ == '__main__':
     n_fail = 0

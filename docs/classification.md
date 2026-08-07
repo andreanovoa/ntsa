@@ -78,12 +78,5 @@ covered by `test_t_lyap_tables` in the dynamodels test suite.
   tangent operator required. `spectrum` only controls the full Benettin QR pass;
   the spectrum's $\lambda_1$ is used by the classification only as a fallback when the
   growth fit is rejected.
-- This package's `bifurcation_sweep` is serial by design: one fresh `m=1` model
-  per parameter value (with optional continuation initial conditions) — a sweep
-  parallelizes across parameter values, not ensemble members. Ensemble pools
-  (`m>1`) themselves work fine when the model package is pip-installed
-  (verified on Python 3.14 under the default forkserver start method, and under
-  spawn/fork); under forkserver/spawn, plain scripts must guard pool-triggering
-  code with `if __name__ == '__main__':` as usual (notebooks are unaffected).
 - Tutorial notebook: [`tutorial_ntsa.ipynb`](https://github.com/andreanovoa/ntsa/blob/main/tutorial_ntsa.ipynb) (full walkthrough on Lorenz63 + Lorenz96, executed).
 - All randomness is seeded (`np.random.default_rng(seed)`).
