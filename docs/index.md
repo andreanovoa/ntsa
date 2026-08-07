@@ -24,9 +24,20 @@ Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2004).
 
 ## Citation
 
+If you use this repository, please cite the software archive:
+
+```bibtex
+@software{novoa_ntsa,
+  author = {Nóvoa},
+  title = {ntsa: nonlinear time-series analysis for dynamical-system models},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.21840914},
+  url = {https://doi.org/10.5281/zenodo.21840914},
+}
+```
+
 The routines in this package were developed from the codes published as
-supplementary material of Nóvoa & Magri (2022). If you use `ntsa` in academic
-work, please cite:
+supplementary material of Nóvoa & Magri (2022):
 
 ```bibtex
 @article{novoa2022jfm,
