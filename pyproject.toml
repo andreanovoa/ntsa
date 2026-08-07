@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ntsa"
+version = "0.1.0"
+description = "Nonlinear time-series analysis for dynamical-system models: Lyapunov spectra, delay embeddings, regime classification, bifurcation sweeps"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Andrea Nóvoa", email = "a.novoa@imperial.ac.uk"}
+]
+keywords = ["nonlinear-time-series", "lyapunov-exponents", "chaos", "delay-embedding", "bifurcation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+    "dynamodels>=0.1,<1.0",
+    "matplotlib>=3.9,<4.0",
+    "numpy>=2.0,<3.0",
+    "scipy>=1.13,<2.0",
+    "tqdm>=4.67",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4",
+    "ruff",
+]
+
+[project.urls]
+Homepage = "https://github.com/andreanovoa/ntsa"
+Repository = "https://github.com/andreanovoa/ntsa"
+Issues = "https://github.com/andreanovoa/ntsa/issues"
+
+[tool.setuptools]
+packages = ["ntsa"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP"]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "N802", "N803", "N806", "N815",  # notation: Nphi, Nq, R matrices, ...
+]
