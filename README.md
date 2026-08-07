@@ -4,12 +4,14 @@ Characterizes the dynamical regime of a model from a single long trajectory:
 delay embedding (optimal lag + false nearest neighbours), Lyapunov exponents, regime
 classification (fixed point / limit cycle period-k / frequency-locked / quasiperiodic / chaotic),
 and a per-case diagnostic figure — one row of 8 panels
-[time series (red, with zoom inset) | PSD (purple, semilogy) | 3-D delay portrait (green,
-with D_KY box) | first-return map of local maxima (blue) | plane-crossing Poincaré section
-(orange) | recurrence plot (black/white) | 3-D MDS | Lyapunov spectrum] — plus Lyapunov-fit,
-Lyapunov-spectrum and classical-MDS pages, all in one multi-page PDF.
+[time series| PSD | 3-D delay portrait | first-return map of local maxima | plane-crossing Poincaré section
+| recurrence plot| 3-D MDS | Lyapunov spectrum] — Key Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2004). 
 
-Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2004).
+### Example:
+
+
+<img width="2877" height="1659" alt="image" src="https://github.com/user-attachments/assets/d366a1f1-6980-4bee-ae1c-a00c514c33b4" />
+
 
 ```bash
 pip install ntsa            # once released; until then:
@@ -30,6 +32,7 @@ python -m ntsa.characterize                     # 4-case demo -> figs/ntsa_defau
 python -m ntsa.characterize --model lorenz63 --param rho --values 20 28 100 350
 python -m ntsa.tools --model lorenz63 --param rho --nP 40   # bifurcation sweep demo
 ```
+
 
 ## Model protocol
 
