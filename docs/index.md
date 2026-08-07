@@ -5,7 +5,7 @@ delay embedding (optimal lag + false nearest neighbours), Lyapunov exponents, re
 classification (fixed point / limit cycle period-k / frequency-locked / quasiperiodic / chaotic),
 and a per-case diagnostic figure — one row of 8 panels
 [time series (red, with zoom inset) | PSD (purple, semilogy) | 3-D delay portrait (green,
-with D_KY box) | first-return map of local maxima (blue) | plane-crossing Poincaré section
+with $D_\mathrm{KY}$ box) | first-return map of local maxima (blue) | plane-crossing Poincaré section
 (orange) | recurrence plot (black/white) | 3-D MDS | Lyapunov spectrum] — plus Lyapunov-fit,
 Lyapunov-spectrum and classical-MDS pages, all in one multi-page PDF.
 

@@ -48,6 +48,7 @@ plugins:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Theory: theory.md
   - Model protocol: protocol.md
   - Regime classification: classification.md
   - Worked example — torus dimensions: torus.md

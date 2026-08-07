@@ -9,7 +9,7 @@ and a per-case diagnostic figure — one row of 8 panels
 *Nonlinear Time Series Analysis* (2004).
 
 **Documentation: [andreanovoa.github.io/ntsa](https://andreanovoa.github.io/ntsa/)**
-· Tutorial: [`tutorial_ntsa.ipynb`](tutorial_ntsa.ipynb)
+| Tutorial: [`tutorial_ntsa.ipynb`](tutorial_ntsa.ipynb)
 
 ### Example:
 
@@ -18,8 +18,9 @@ and a per-case diagnostic figure — one row of 8 panels
 ## Install
 
 ```bash
-pip install ntsa            # once released; until then:
-pip install "ntsa @ git+https://github.com/andreanovoa/ntsa"
+pip install ntsa            # once released; until then (dynamodels is not on PyPI yet either):
+pip install "dynamodels @ git+https://github.com/andreanovoa/dynamodels" \
+            "ntsa @ git+https://github.com/andreanovoa/ntsa"
 ```
 
 ## Quickstart

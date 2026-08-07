@@ -1,8 +1,9 @@
 """Per-case nonlinear time-series characterization figures (Kantz & Schreiber style).
 
-Replicates the paper-supplement layout: one row of 5 panels per case
-[time series + zoom inset | semilogy PSD | 3-D delay portrait | first-return map | recurrence plot],
-followed by Lyapunov-fit, Lyapunov-spectrum and MDS-embedding pages, all saved to a single PDF.
+One row of 8 panels per case [time series + zoom inset | semilogy PSD | 3-D delay
+portrait | first-return map | plane-crossing Poincaré section | recurrence plot |
+3-D MDS | Lyapunov spectrum], followed by Lyapunov-fit, Lyapunov-spectrum and
+MDS-embedding pages, all saved to a single PDF.
 
 Run ``python -m ntsa.characterize --help`` for the demo driver.
 """
@@ -259,7 +260,7 @@ def _annotate_psd_peaks(ax, f, p, evidence):
     if evidence.get('f1') and evidence.get('f2'):
         ratio = f'$f_2/f_1$={evidence["f2"] / evidence["f1"]:.3f}'
         if evidence.get('rational_match'):
-            ratio += f'≈{evidence["rational_match"]}'
+            ratio += f'$\\approx${evidence["rational_match"]}'
         lines.append(ratio)
     if lines:
         ax.text(0.97, 0.95, '\n'.join(lines), transform=ax.transAxes, fontsize=6,
@@ -328,7 +329,7 @@ def plot_lyapunov_spectrum(exponents):
 
 
 def plot_mds(gamma, t_sub):
-    """Classical-MDS embedding: 2-D (γ1, γ2) and 3-D (γ1, γ2, γ3) coloured by time."""
+    """Classical-MDS embedding: 2-D (gamma_1, gamma_2) and 3-D (gamma_1..3) coloured by time."""
     fig = plt.figure(figsize=(11, 5), layout='constrained')
     _tight(fig)
     ax2d = fig.add_subplot(1, 2, 1)
@@ -360,7 +361,7 @@ def _lam1_text(res):
     lam = res['lambda1']
     if lam is None or not np.isfinite(lam):
         return ''
-    return (f'{lam:.3f}±{res["lambda1_std"]:.2g}'
+    return (f'{lam:.3f}$\\pm${res["lambda1_std"]:.2g}'
             + ('*' if lam - 2 * res['lambda1_std'] <= 0 else ''))
 
 
@@ -474,8 +475,8 @@ def characterize(models, labels=None, obs_idx=0, t_run=None, t_transient=None,
         for r, res in enumerate(chunk):
             rd = row_data[page0 + r]
             lam_txt = _lam1_text(res)
-            lam_txt = f', λ1={lam_txt}' if lam_txt else ''
-            title = f'{res["label"]}\n{res["regime"]}  ζ={res["zeta"]}, d={res["dim"]}{lam_txt}'
+            lam_txt = f', $\\lambda_1$={lam_txt}' if lam_txt else ''
+            title = f'{res["label"]}\n{res["regime"]}  $\\zeta$={res["zeta"]}, d={res["dim"]}{lam_txt}'
             plot_row(fig, gs[r], res['t'], res['x'], rd['dt'], res['zeta'], res['dim'],
                      rd['t_CR'], title=title, evidence=res['evidence'],
                      gamma=res['gamma'], t_gamma=rd['t_sub'], exponents=res['spectrum'],
@@ -556,7 +557,7 @@ if __name__ == '__main__':
                        mds=not args.no_mds,
                        pdf_name=f'figs/ntsa_{tag}.pdf')
 
-    hdr = f'{"case":<42} {"regime":<24} {"ζ":>5} {"d":>3} {"λ1":>16}'
+    hdr = f'{"case":<42} {"regime":<24} {"zeta":>5} {"d":>3} {"lam1":>16}'
     print('\n' + hdr)
     print('-' * len(hdr))
     for res in out:

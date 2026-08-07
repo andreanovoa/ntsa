@@ -346,7 +346,7 @@ def classical_mds(X, n_coords=3, nmax=2000):
     return gamma, idx
 
 
-def correlation_dimension(Y, nmax=2000, seed=0):
+def correlation_dimension(Y, nmax=2000):
     """Grassberger-Procaccia correlation dimension D2 (Kantz & Schreiber ch. 6).
 
     C(r) = fraction of point pairs closer than r; D2 = d log C / d log r fitted
