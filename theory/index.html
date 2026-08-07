@@ -1,0 +1,1233 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Nonlinear time-series analysis for dynamical-system models">
+      
+      
+      
+        <link rel="canonical" href="https://andreanovoa.github.io/ntsa/theory/">
+      
+      
+        <link rel="prev" href="../getting-started/">
+      
+      
+        <link rel="next" href="../protocol/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Theory - ntsa</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#theory" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ntsa" class="md-header__button md-logo" aria-label="ntsa" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ntsa
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Theory
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/andreanovoa/ntsa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    andreanovoa/ntsa
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ntsa" class="md-nav__button md-logo" aria-label="ntsa" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ntsa
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/andreanovoa/ntsa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    andreanovoa/ntsa
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Theory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#delay-embedding-takens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delay embedding (Takens)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Delay embedding (Takens)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimal-lag-average-mutual-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimal lag: average mutual information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#embedding-dimension-false-nearest-neighbours" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedding dimension: false nearest neighbours
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#power-spectral-density" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Power spectral density
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-return-map-and-peak-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-return map and peak clusters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recurrence-plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurrence plot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#poincare-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Poincaré section
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correlation-dimension-grassbergerprocaccia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correlation dimension (Grassberger–Procaccia)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classical-multidimensional-scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classical multidimensional scaling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lyapunov-spectrum-benettin-qr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lyapunov spectrum (Benettin QR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leading-exponent-from-perturbation-growth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leading exponent from perturbation growth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kaplanyorke-dimension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kaplan–Yorke dimension
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#torus-dimension-and-the-classifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Torus dimension and the classifier
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../protocol/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model protocol
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Regime classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../torus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worked example — torus dimensions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ntsa.tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/lyapunov/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ntsa.lyapunov
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/characterize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ntsa.characterize
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/andreanovoa/ntsa/blob/main/tutorial_ntsa.ipynb" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial notebook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#delay-embedding-takens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delay embedding (Takens)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Delay embedding (Takens)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#optimal-lag-average-mutual-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Optimal lag: average mutual information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#embedding-dimension-false-nearest-neighbours" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Embedding dimension: false nearest neighbours
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#power-spectral-density" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Power spectral density
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-return-map-and-peak-clusters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-return map and peak clusters
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recurrence-plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurrence plot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#poincare-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Poincaré section
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#correlation-dimension-grassbergerprocaccia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correlation dimension (Grassberger–Procaccia)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classical-multidimensional-scaling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classical multidimensional scaling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lyapunov-spectrum-benettin-qr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lyapunov spectrum (Benettin QR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leading-exponent-from-perturbation-growth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Leading exponent from perturbation growth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kaplanyorke-dimension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kaplan–Yorke dimension
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#torus-dimension-and-the-classifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Torus dimension and the classifier
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="theory">Theory</h1>
+<p>The equations behind each method, with the notation used throughout the package:
+a scalar observable <span class="arithmatex">\(x(t)\)</span> sampled at <span class="arithmatex">\(\Delta t\)</span> (so <span class="arithmatex">\(x_i = x(t_i)\)</span>, <span class="arithmatex">\(N\)</span> samples),
+a model state <span class="arithmatex">\(\psi \in \mathbb{R}^{N_\phi}\)</span>, and delay <span class="arithmatex">\(\zeta\)</span> expressed in
+samples. References are collected at the bottom.</p>
+<h2 id="delay-embedding-takens">Delay embedding (Takens)</h2>
+<p>The attractor is reconstructed from the scalar record by the delay map</p>
+<div class="arithmatex">\[
+\mathbf{Y}_i = \left( x_i,\ x_{i+\zeta},\ \dots,\ x_{i+(d-1)\zeta} \right)
+\in \mathbb{R}^d ,
+\]</div>
+<p>which is an embedding (diffeomorphic to the true attractor) for
+<span class="arithmatex">\(d &gt; 2\,d_A\)</span> with <span class="arithmatex">\(d_A\)</span> the attractor's box-counting dimension [Takens 1981].
+<code>delay_embed(x, dim, lag)</code> builds <span class="arithmatex">\(\mathbf{Y}\)</span>; the two free parameters are
+chosen as follows.</p>
+<h3 id="optimal-lag-average-mutual-information">Optimal lag: average mutual information</h3>
+<p>The AMI between the signal and its <span class="arithmatex">\(\zeta\)</span>-shifted copy,</p>
+<div class="arithmatex">\[
+I(\zeta) = \sum_{k,l} p_{kl}(\zeta)\,
+\ln \frac{p_{kl}(\zeta)}{p_k\, p_l},
+\]</div>
+<p>is estimated on a histogram (<span class="arithmatex">\(p_k\)</span>: marginal bin probabilities, <span class="arithmatex">\(p_{kl}\)</span>:
+joint probabilities of <span class="arithmatex">\(x_i\)</span> falling in bin <span class="arithmatex">\(k\)</span> and <span class="arithmatex">\(x_{i+\zeta}\)</span> in bin <span class="arithmatex">\(l\)</span>).
+<code>optimal_lag</code> returns the <strong>first local minimum</strong> of <span class="arithmatex">\(I(\zeta)\)</span> — the classic
+compromise between independence (large <span class="arithmatex">\(I\)</span> drop) and staying on the same
+attractor fold [Fraser &amp; Swinney 1986].</p>
+<h3 id="embedding-dimension-false-nearest-neighbours">Embedding dimension: false nearest neighbours</h3>
+<p>For each point <span class="arithmatex">\(\mathbf{Y}_i\)</span> in dimension <span class="arithmatex">\(d\)</span> with nearest neighbour
+<span class="arithmatex">\(\mathbf{Y}_{n(i)}\)</span> at distance <span class="arithmatex">\(R_d(i)\)</span>, the neighbour is declared <strong>false</strong> if
+unfolding to <span class="arithmatex">\(d+1\)</span> stretches it too much [Kennel et al. 1992]:</p>
+<div class="arithmatex">\[
+\frac{\left| x_{i+d\zeta} - x_{n(i)+d\zeta} \right|}{R_d(i)} &gt; R_\mathrm{tol}
+\quad \text{or} \quad
+\frac{R_{d+1}(i)}{\sigma_x} &gt; A_\mathrm{tol},
+\]</div>
+<p>with <span class="arithmatex">\(R_\mathrm{tol} = 10\)</span>, <span class="arithmatex">\(A_\mathrm{tol} = 2\)</span> and <span class="arithmatex">\(\sigma_x\)</span> the signal's
+standard deviation. <code>false_nearest_neighbours</code> returns the smallest <span class="arithmatex">\(d\)</span> whose
+false-neighbour fraction drops below 1%.</p>
+<h2 id="power-spectral-density">Power spectral density</h2>
+<p><code>fun_PSD</code> uses the one-sided FFT amplitude spectrum,</p>
+<div class="arithmatex">\[
+\mathrm{PSD}(f_k) = \frac{2}{N} \left| \sum_{j=0}^{N-1} x_j\,
+e^{-2\pi i jk/N} \right| , \qquad f_k = \frac{k}{N\,\Delta t},\quad
+k &lt; N/2 .
+\]</div>
+<p>The classifier extracts the dominant peaks <span class="arithmatex">\(f_1, f_2, \dots\)</span> from it
+(<code>find_peaks</code> with prominence thresholds) and tests their ratios for
+rationality.</p>
+<h2 id="first-return-map-and-peak-clusters">First-return map and peak clusters</h2>
+<p>Successive local maxima of the signal form the return map
+<span class="arithmatex">\(x_{\max}(i+1)\)</span> vs <span class="arithmatex">\(x_{\max}(i)\)</span>. A period-<span class="arithmatex">\(k\)</span> orbit produces <span class="arithmatex">\(k\)</span> tight
+clusters; <code>count_peak_clusters</code> counts maxima levels that differ by more than
+<code>tol</code> <span class="arithmatex">\(\times\)</span> the signal range. This check outranks a positive
+perturbation-growth exponent in the classifier: <span class="arithmatex">\(k\)</span> tight maxima levels over a
+long record are incompatible with chaos (see the
+<a href="../classification/">decision tree</a>).</p>
+<h2 id="recurrence-plot">Recurrence plot</h2>
+<div class="arithmatex">\[
+R_{ij} = \Theta\!\left( \varepsilon - \left\| \mathbf{Y}_i - \mathbf{Y}_j
+\right\| \right),
+\]</div>
+<p>with <span class="arithmatex">\(\Theta\)</span> the Heaviside step and <span class="arithmatex">\(\varepsilon\)</span> set to 10% of the maximum
+pairwise distance (retargeted to a fixed 10% recurrence rate when the density
+degenerates). Periodic dynamics give unbroken diagonals; quasiperiodic
+dynamics give diagonals of varying spacing; chaos gives short, broken
+diagonals [Eckmann et al. 1987].</p>
+<h2 id="poincare-section">Poincaré section</h2>
+<p><code>poincare_section</code> intersects the 3-D delay embedding with the plane
+<span class="arithmatex">\(x(t + 2\zeta) = \text{level}\)</span> (median by default), keeping upward crossings.
+Between bracketing samples <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(i+1\)</span> the crossing is linearly
+interpolated,</p>
+<div class="arithmatex">\[
+\mathbf{P} = \mathbf{Y}_i + w\,(\mathbf{Y}_{i+1} - \mathbf{Y}_i),
+\qquad w = \frac{s_i}{s_i - s_{i+1}},
+\]</div>
+<p>where <span class="arithmatex">\(s = Y_3 - \text{level}\)</span> is the signed distance to the plane. A
+limit cycle of period <span class="arithmatex">\(k\)</span> appears as <span class="arithmatex">\(k\)</span> points, a 2-torus as a closed loop,
+chaos as a fractal scatter.</p>
+<h2 id="correlation-dimension-grassbergerprocaccia">Correlation dimension (Grassberger–Procaccia)</h2>
+<p>The correlation sum over pairs of points on the attractor (or section),</p>
+<div class="arithmatex">\[
+C(r) = \frac{2}{n(n-1)} \sum_{i&lt;j} \Theta\!\left( r -
+\left\| \mathbf{Y}_i - \mathbf{Y}_j \right\| \right)
+\;\propto\; r^{D_2} \quad (r \to 0),
+\]</div>
+<p>gives <span class="arithmatex">\(D_2\)</span> as the slope of <span class="arithmatex">\(\ln C\)</span> vs <span class="arithmatex">\(\ln r\)</span> fitted between the 2nd and
+50th distance percentiles [Grassberger &amp; Procaccia 1983].
+For a <span class="arithmatex">\(k\)</span>-torus <span class="arithmatex">\(D_2 \approx k\)</span> on the attractor and <span class="arithmatex">\(\approx k-1\)</span> on its
+Poincaré section — one of the three torus-dimension witnesses used in the
+<a href="../torus/">worked example</a>.</p>
+<h2 id="classical-multidimensional-scaling">Classical multidimensional scaling</h2>
+<p>From the pairwise distance matrix <span class="arithmatex">\(D_{ij}\)</span> of the (subsampled) state
+trajectory, the Gram matrix is recovered by double centring,</p>
+<div class="arithmatex">\[
+B = -\tfrac{1}{2}\, H\, D^{(2)}\, H, \qquad
+H = I - \tfrac{1}{n}\mathbf{1}\mathbf{1}^{\!\top},
+\]</div>
+<p>where <span class="arithmatex">\(D^{(2)}\)</span> holds squared distances. The embedding coordinates are
+<span class="arithmatex">\(\gamma_j = \sqrt{\mu_j}\, v_j\)</span> from the top eigenpairs <span class="arithmatex">\((\mu_j, v_j)\)</span> of <span class="arithmatex">\(B\)</span>
+— a distance-preserving 3-D view of the attractor that requires no choice of
+observable.</p>
+<h2 id="lyapunov-spectrum-benettin-qr">Lyapunov spectrum (Benettin QR)</h2>
+<p>The full spectrum comes from evolving the state jointly with a tangent basis
+<span class="arithmatex">\(\Psi \in \mathbb{R}^{N_\phi \times n_\mathrm{exp}}\)</span> under the variational
+equation</p>
+<div class="arithmatex">\[
+\dot{\psi} = f(\psi), \qquad
+\dot{\Psi} = J(\psi)\,\Psi, \qquad
+J = \frac{\partial f}{\partial \psi},
+\]</div>
+<p>(RK4, analytic <span class="arithmatex">\(J\)</span> for Lorenz63/96, finite differences otherwise), with QR
+re-orthonormalization <span class="arithmatex">\(\Psi = QR\)</span> every <span class="arithmatex">\(N_\mathrm{gs}\)</span> steps. The exponents
+are the time-averaged log growth of the diagonal of <span class="arithmatex">\(R\)</span> [Benettin et al. 1980]:</p>
+<div class="arithmatex">\[
+\lambda_j = \lim_{T \to \infty} \frac{1}{T} \sum_{m} \ln R_{jj}^{(m)} .
+\]</div>
+<p><strong>Convergence control.</strong> The neutral (along-flow) exponent decays to zero only
+as <span class="arithmatex">\(\mathcal{O}(1/T)\)</span>, so the horizon is extended (up to <code>t_max</code>) until the
+halving test</p>
+<div class="arithmatex">\[
+\left| \lambda_j(T) - \lambda_j(T/2) \right| &lt;
+\max\!\left( \text{atol},\ \text{rtol} \cdot |\lambda_j| \right)
+\]</div>
+<p>passes at two consecutive checks (one can be a phase coincidence).</p>
+<h2 id="leading-exponent-from-perturbation-growth">Leading exponent from perturbation growth</h2>
+<p>Without any Jacobian (so it also works for discrete maps), <code>leading_lyapunov</code>
+evolves an ensemble of perturbed copies <span class="arithmatex">\(\psi + \delta_0 \mathbf{e}\)</span> and fits
+the linear region of the mean log separation,</p>
+<div class="arithmatex">\[
+\lambda_1 \approx \frac{d}{dt} \left\langle \ln \left\|
+\psi_\mathrm{pert}(t) - \psi_\mathrm{ref}(t) \right\| \right\rangle ,
+\]</div>
+<p>between the transient and the saturation plateau (automatic window; fit
+rejected if <span class="arithmatex">\(R^2 &lt; 0.5\)</span>).</p>
+<p><strong>Saturation guard.</strong> On a stable orbit, non-normal transient amplification
+can produce a large positive slope even though there is no chaos
+(thermoacoustic systems read <span class="arithmatex">\(\lambda_1 \sim 200\)</span> this way). The fit is
+rejected when the separation saturates far below the attractor diameter while
+the tail has stopped growing:</p>
+<div class="arithmatex">\[
+\text{sat} &lt; 0.05 \cdot \mathrm{diam}
+\quad \text{and} \quad
+\text{tail slope} &lt; 0.1\,\lambda_1 .
+\]</div>
+<h2 id="kaplanyorke-dimension">Kaplan–Yorke dimension</h2>
+<p>With the exponents sorted <span class="arithmatex">\(\lambda_1 \geq \lambda_2 \geq \dots\)</span> and <span class="arithmatex">\(j\)</span> the
+largest index with <span class="arithmatex">\(\sum_{i=1}^{j} \lambda_i \geq 0\)</span>,</p>
+<div class="arithmatex">\[
+D_\mathrm{KY} = j + \frac{\sum_{i=1}^{j} \lambda_i}{\left| \lambda_{j+1}
+\right|} ,
+\]</div>
+<p>conjectured equal to the information dimension [Kaplan &amp; Yorke 1979]. Shown as
+a text box on the delay-portrait panel.</p>
+<h2 id="torus-dimension-and-the-classifier">Torus dimension and the classifier</h2>
+<p>A <span class="arithmatex">\(k\)</span>-torus carries exactly <span class="arithmatex">\(k\)</span> neutral exponents (<span class="arithmatex">\(|\lambda| &lt;\)</span> <code>neutral_tol</code>)
+and no positive one; chaos replaces one neutral direction with a positive
+exponent. Together with <span class="arithmatex">\(D_2\)</span> on the attractor (<span class="arithmatex">\(\approx k\)</span>) and on the
+section (<span class="arithmatex">\(\approx k-1\)</span>) this fixes the torus dimension — the full decision
+order (fixed point <span class="arithmatex">\(\to\)</span> period-<span class="arithmatex">\(k\)</span> clusters <span class="arithmatex">\(\to\)</span> chaos <span class="arithmatex">\(\to\)</span>
+quasiperiodic/locked) is on the <a href="../classification/">classification page</a>, and
+the Lorenz96 Ruelle–Takens–Newhouse route is the <a href="../torus/">worked example</a>.</p>
+<h2 id="references">References</h2>
+<ul>
+<li>Takens (1981). Detecting strange attractors in turbulence. <em>Lecture Notes in Math.</em> 898.</li>
+<li>Fraser &amp; Swinney (1986). Independent coordinates for strange attractors from mutual information. <em>Phys. Rev. A</em> 33, 1134.</li>
+<li>Kennel, Brown &amp; Abarbanel (1992). Determining embedding dimension for phase-space reconstruction. <em>Phys. Rev. A</em> 45, 3403.</li>
+<li>Eckmann, Kamphorst &amp; Ruelle (1987). Recurrence plots of dynamical systems. <em>Europhys. Lett.</em> 4, 973.</li>
+<li>Grassberger &amp; Procaccia (1983). Characterization of strange attractors. <em>Phys. Rev. Lett.</em> 50, 346.</li>
+<li>Benettin, Galgani, Giorgilli &amp; Strelcyn (1980). Lyapunov characteristic exponents for smooth dynamical systems. <em>Meccanica</em> 15, 9.</li>
+<li>Kaplan &amp; Yorke (1979). Chaotic behavior of multidimensional difference equations. <em>Lecture Notes in Math.</em> 730.</li>
+<li>Kantz &amp; Schreiber (2004). <em>Nonlinear Time Series Analysis</em>, 2nd ed., Cambridge University Press.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
