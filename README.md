@@ -1,6 +1,6 @@
 # ntsa — nonlinear time-series analysis for dynamical-system models
 
-[![DOI](https://zenodo.org/badge/1326700756.svg)](https://doi.org/10.5281/zenodo.21843575)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21843575-blue.svg)](https://doi.org/10.5281/zenodo.21843575)
 [![PyPI](https://img.shields.io/pypi/v/ntsa)](https://pypi.org/project/ntsa/)
 
 Characterizes the dynamical regime of a model from a single long trajectory:
