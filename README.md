@@ -49,8 +49,8 @@ python -m pytest tests/
 ruff check ntsa/ tests/
 ```
 
-Releases publish to PyPI via trusted publishing on version tags; docs deploy to
-GitHub Pages on push to `main` (see `.github/workflows/`).
+Releases: bump `version` in `pyproject.toml`, then `git tag vX.Y.Z && git push --tags`
+(publishes to PyPI); docs deploy to GitHub Pages on every push to `main`.
 
 ## License
 

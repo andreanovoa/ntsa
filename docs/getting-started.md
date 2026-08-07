@@ -34,6 +34,5 @@ ruff check ntsa/ tests/
 
 ## Releasing (maintainer note)
 
-Releases publish to PyPI via GitHub Actions trusted publishing on version tags:
-configure a trusted publisher for `andreanovoa/ntsa` (workflow `release.yml`,
-environment `pypi`) at pypi.org, then `git tag v0.1.0 && git push --tags`.
+Releases publish to PyPI automatically: bump `version` in `pyproject.toml`,
+then `git tag vX.Y.Z && git push --tags`.
