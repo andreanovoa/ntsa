@@ -22,6 +22,27 @@ Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2004).
 - [romda](https://github.com/andreanovoa/real-time-bias-aware-DA) — real-time
   bias-aware data assimilation built on both packages.
 
+## Citation
+
+The routines in this package were developed from the codes published as
+supplementary material of Nóvoa & Magri (2022). If you use `ntsa` in academic
+work, please cite:
+
+```bibtex
+@article{novoa2022jfm,
+  title = {Real-time thermoacoustic data assimilation},
+  journal = {Journal of Fluid Mechanics},
+  volume = {948},
+  pages = {A35},
+  year = {2022},
+  doi = {10.1017/jfm.2022.653},
+  url = {https://doi.org/10.1017/jfm.2022.653},
+  eprint = {2106.06409},
+  archivePrefix = {arXiv},
+  author = {Nóvoa and Magri},
+}
+```
+
 ## References
 
 - Kantz & Schreiber (2004). *Nonlinear Time Series Analysis*, 2nd ed., Cambridge Univ. Press.
