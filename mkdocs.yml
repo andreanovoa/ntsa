@@ -1,0 +1,58 @@
+site_name: ntsa
+site_description: Nonlinear time-series analysis for dynamical-system models
+site_url: https://andreanovoa.github.io/ntsa/
+repo_url: https://github.com/andreanovoa/ntsa
+repo_name: andreanovoa/ntsa
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: numpy
+            show_source: true
+            members_order: source
+            show_root_heading: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Model protocol: protocol.md
+  - Regime classification: classification.md
+  - Worked example — torus dimensions: torus.md
+  - API reference:
+      - ntsa.tools: api/tools.md
+      - ntsa.lyapunov: api/lyapunov.md
+      - ntsa.characterize: api/characterize.md
+  - Tutorial notebook: https://github.com/andreanovoa/ntsa/blob/main/tutorial_ntsa.ipynb
