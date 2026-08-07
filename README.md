@@ -201,7 +201,7 @@ exponentially divergent — the spectrum, not the geometry, makes the call.
 - This package's
   `bifurcation_sweep` is generic but serial (never uses ensemble `m>1` — Py3.14
   forkserver pools can hang the IVP integrator).
-- Tutorial notebook: `dev/NTSA/tutorial_ntsa.ipynb` in the [romda repo](https://github.com/andreanovoa/real-time-bias-aware-DA).
+- Tutorial notebook: [`tutorial_ntsa.ipynb`](tutorial_ntsa.ipynb) (full walkthrough on Lorenz63 + Lorenz96, executed).
 - All randomness is seeded (`np.random.default_rng(seed)`).
 
 ## References
