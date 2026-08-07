@@ -1,5 +1,8 @@
 # ntsa — nonlinear time-series analysis for dynamical-system models
 
+[![DOI](https://zenodo.org/badge/1326700756.svg)](https://doi.org/10.5281/zenodo.21843575)
+[![PyPI](https://img.shields.io/pypi/v/ntsa)](https://pypi.org/project/ntsa/)
+
 Characterizes the dynamical regime of a model from a single long trajectory:
 - Lyapunov exponents
 - Delay embedding (optimal lag + false nearest neighbours)
@@ -55,8 +58,8 @@ If you use this repository, please cite the software archive:
   author = {Nóvoa},
   title = {ntsa: nonlinear time-series analysis for dynamical-system models},
   publisher = {Zenodo},
-  doi = {10.5281/zenodo.21840914},
-  url = {https://doi.org/10.5281/zenodo.21840914},
+  doi = {10.5281/zenodo.21843575},
+  url = {https://doi.org/10.5281/zenodo.21843575},
 }
 ```
 
