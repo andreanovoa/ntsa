@@ -31,8 +31,3 @@ pip install -e ".[dev]"
 python -m pytest tests/
 ruff check ntsa/ tests/
 ```
-
-## Releasing (maintainer note)
-
-Releases publish to PyPI automatically: bump `version` in `pyproject.toml`,
-then `git tag vX.Y.Z && git push --tags`.
