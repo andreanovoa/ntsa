@@ -29,6 +29,32 @@ Disambiguate with the PSD in the panel text box: a genuine period-doubling shows
 subharmonic at f1/2; a multi-humped period-1 orbit shows only the harmonic comb of f1
 (see the Rijke verification scripts in the romda repo, beta=0.4).
 
+## Bifurcation diagram: Lorenz-96 F-route
+
+Local extrema of the observables against the swept parameter summarize the whole route the
+decision tree walks — `bifurcation_sweep` runs the sweep as one ensemble, `plot_bifurcation`
+draws it:
+
+```python
+import numpy as np
+from dynamodels.physical import Lorenz96
+from ntsa.tools import bifurcation_sweep, plot_bifurcation
+
+model = Lorenz96(Nx=10)
+values, peaks = bifurcation_sweep(model, 'F', np.linspace(0.5, 8., 120), extrema=('max', 'min'))
+plot_bifurcation(values, peaks, model.alpha_labels['F'], model.obs_labels)
+```
+
+![Bifurcation diagram of Lorenz-96 (Nx=10): local extrema of x0, x5, x9 against F](assets/bifurcation_lorenz96_F.png)
+
+Read with the decision tree: maxima and minima coincide on the stable **fixed point**
+($F \lesssim 0.9$); the Hopf bifurcation opens one tight level per branch (**period-1 limit
+cycle**); a second minima level appears near $F \approx 3.6$ (a multi-humped waveform — the
+period-k caveat above); the levels smear into bands on the **torus** ($F \approx 4.3$) and
+fill out into broad scatter in **chaos** ($F \gtrsim 4.6$). The [torus page](torus.md) walks
+this same route case by case. The three panels repeat the story at $x_0$, $x_5$, $x_9$:
+the route is site-independent by the model's cyclic symmetry.
+
 ## Measured $\lambda_1$ tables in the model files
 
 The dominant Lyapunov exponents measured here are stored in the `dynamodels`
