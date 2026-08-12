@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ntsa"
-version = "0.1.0"
+version = "0.1.1"
 description = "Nonlinear time-series analysis for dynamical-system models: Lyapunov spectra, delay embeddings, regime classification, bifurcation sweeps"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "dynamodels>=0.1,<1.0",
+    "dynamodels>=0.3.1,<1.0",
     "matplotlib>=3.9,<4.0",
     "numpy>=2.0,<3.0",
     "scipy>=1.13,<2.0",

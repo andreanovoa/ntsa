@@ -314,3 +314,18 @@ if __name__ == '__main__':
     total = time.time() - t_all
     print(f'\n{len(TESTS) - n_fail}/{len(TESTS)} tests passed in {total:.1f} s')
     sys.exit(1 if n_fail else 0)
+
+
+def test_respawn_preserves_structure_and_dtype():
+    # complex spectral states must survive respawn (no float cast), and the
+    # structural fixed_params (KS: Nx, nu, L) must be carried over
+    from dynamodels.physical import KS
+
+    m = KS(Nx=64, dt=0.1, nu=0.08)
+    m2 = ntsa_tools.respawn(m)
+    assert m2.Nx == m.Nx and m2.dt == m.dt
+    assert np.iscomplexobj(m2.psi0)
+    assert np.isclose(m2.L, m.L)
+    pa, _ = m.time_step(Nt=20)
+    pb, _ = m2.time_step(Nt=20)
+    assert np.allclose(pa, pb)

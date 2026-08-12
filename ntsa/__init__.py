@@ -13,4 +13,4 @@ implementation used by the demos and tests, but any duck-type is accepted.
 Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2nd ed., CUP 2004).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

@@ -81,7 +81,10 @@ def respawn(model, psi0=None, dt=None, **overrides):
         if hasattr(model, key):
             params[key] = list(getattr(model, key))
     params.update(overrides)
-    return type(model)(psi0=np.array(psi0, dtype=float), dt=dt or model.dt, **params)
+    psi0 = np.asarray(psi0)
+    if psi0.dtype == object:
+        psi0 = psi0.astype(float)
+    return type(model)(psi0=psi0, dt=dt or model.dt, **params)
 
 
 def run_long(model, t_run, t_transient=None, trim_transient=True):
