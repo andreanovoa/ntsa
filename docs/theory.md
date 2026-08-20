@@ -3,9 +3,17 @@
 The equations behind each method, with the notation used throughout the package:
 a scalar observable $x(t)$ sampled at $\Delta t$ (so $x_i = x(t_i)$, $N$ samples),
 a model state $\psi \in \mathbb{R}^{N_\phi}$, and delay $\zeta$ expressed in
-samples. References are collected at the bottom.
+samples. The methods are grouped by what they do: reconstructing the phase space
+from a record, diagnosing the signal and the reconstructed attractor, computing
+Lyapunov exponents, and classifying the regime. References are collected at the
+bottom.
 
-## Delay embedding (Takens)
+## Phase-space reconstruction
+
+How coordinates for the attractor are obtained — from a scalar record (delay
+embedding, with its two free parameters) or from the full state trajectory (MDS).
+
+### Delay embedding (Takens)
 
 The attractor is reconstructed from the scalar record by the delay map
 
@@ -50,7 +58,27 @@ with $R_\mathrm{tol} = 10$, $A_\mathrm{tol} = 2$ and $\sigma_x$ the signal's
 standard deviation. `false_nearest_neighbours` returns the smallest $d$ whose
 false-neighbour fraction drops below 1%.
 
-## Power spectral density
+### Classical multidimensional scaling
+
+From the pairwise distance matrix $D_{ij}$ of the (subsampled) state
+trajectory, the Gram matrix is recovered by double centring,
+
+$$
+B = -\tfrac{1}{2}\, H\, D^{(2)}\, H, \qquad
+H = I - \tfrac{1}{n}\mathbf{1}\mathbf{1}^{\!\top},
+$$
+
+where $D^{(2)}$ holds squared distances. The embedding coordinates are
+$\gamma_j = \sqrt{\mu_j}\, v_j$ from the top eigenpairs $(\mu_j, v_j)$ of $B$
+— a distance-preserving 3-D view of the attractor that requires no choice of
+observable.
+
+## Signal and attractor diagnostics
+
+Qualitative fingerprints of the regime (PSD peaks, return map, recurrence,
+Poincaré section) and the quantitative attractor dimension $D_2$.
+
+### Power spectral density
 
 `fun_PSD` uses the one-sided FFT amplitude spectrum,
 
@@ -64,7 +92,7 @@ The classifier extracts the dominant peaks $f_1, f_2, \dots$ from it
 (`find_peaks` with prominence thresholds) and tests their ratios for
 rationality.
 
-## First-return map and peak clusters
+### First-return map and peak clusters
 
 Successive local maxima of the signal form the return map
 $x_{\max}(i+1)$ vs $x_{\max}(i)$. A period-$k$ orbit produces $k$ tight
@@ -74,7 +102,7 @@ perturbation-growth exponent in the classifier: $k$ tight maxima levels over a
 long record are incompatible with chaos (see the
 [decision tree](classification.md)).
 
-## Recurrence plot
+### Recurrence plot
 
 $$
 R_{ij} = \Theta\!\left( \varepsilon - \left\| \mathbf{Y}_i - \mathbf{Y}_j
@@ -87,7 +115,7 @@ degenerates). Periodic dynamics give unbroken diagonals; quasiperiodic
 dynamics give diagonals of varying spacing; chaos gives short, broken
 diagonals [Eckmann et al. 1987].
 
-## Poincaré section
+### Poincaré section
 
 `poincare_section` intersects the 3-D delay embedding with the plane
 $x(t + 2\zeta) = \text{level}$ (median by default), keeping upward crossings.
@@ -103,7 +131,7 @@ where $s = Y_3 - \text{level}$ is the signed distance to the plane. A
 limit cycle of period $k$ appears as $k$ points, a 2-torus as a closed loop,
 chaos as a fractal scatter.
 
-## Correlation dimension (Grassberger–Procaccia)
+### Correlation dimension (Grassberger–Procaccia)
 
 The correlation sum over pairs of points on the attractor (or section),
 
@@ -119,22 +147,15 @@ For a $k$-torus $D_2 \approx k$ on the attractor and $\approx k-1$ on its
 Poincaré section — one of the three torus-dimension witnesses used in the
 [worked example](torus.md).
 
-## Classical multidimensional scaling
+## Lyapunov exponents
 
-From the pairwise distance matrix $D_{ij}$ of the (subsampled) state
-trajectory, the Gram matrix is recovered by double centring,
+Three routes, by what is available: the full spectrum needs the model's
+right-hand side (and ideally its Jacobian); the perturbation-growth estimate
+only needs a model that can be re-integrated; the Rosenstein estimate needs
+nothing but the measured series. The Kaplan–Yorke dimension follows from the
+spectrum.
 
-$$
-B = -\tfrac{1}{2}\, H\, D^{(2)}\, H, \qquad
-H = I - \tfrac{1}{n}\mathbf{1}\mathbf{1}^{\!\top},
-$$
-
-where $D^{(2)}$ holds squared distances. The embedding coordinates are
-$\gamma_j = \sqrt{\mu_j}\, v_j$ from the top eigenpairs $(\mu_j, v_j)$ of $B$
-— a distance-preserving 3-D view of the attractor that requires no choice of
-observable.
-
-## Lyapunov spectrum (Benettin QR)
+### Full spectrum: Benettin QR
 
 The full spectrum comes from evolving the state jointly with a tangent basis
 $\Psi \in \mathbb{R}^{N_\phi \times n_\mathrm{exp}}$ under the variational
@@ -165,7 +186,7 @@ $$
 
 passes at two consecutive checks (one can be a phase coincidence).
 
-## Leading exponent from perturbation growth
+### Leading exponent from perturbation growth
 
 Without any Jacobian (so it also works for discrete maps), `leading_lyapunov`
 evolves an ensemble of perturbed copies $\psi + \delta_0 \mathbf{e}$ and fits
@@ -191,7 +212,31 @@ $$
 \text{tail slope} < 0.1\,\lambda_1 .
 $$
 
-## Kaplan–Yorke dimension
+### Data-only: Rosenstein estimator
+
+When only a measured series is available, `rosenstein_lyapunov` applies the same
+idea to the delay embedding [Rosenstein et al. 1993]: each reference point
+$\mathbf{y}_i$ is paired with its nearest neighbour $\mathbf{y}_j$ at least one
+Theiler window $w$ away in time ($|i - j| > w$, with $w$ the mean inter-maximum
+spacing, so pairs sample different orbits rather than adjacent samples of the
+same one), and the mean log divergence
+
+$$
+S(k) = \left\langle \ln \left\| \mathbf{y}_{i+k} - \mathbf{y}_{j+k} \right\|
+\right\rangle_{(i,j)}
+$$
+
+is fitted over its linear window with the same machinery — and the same $R^2$
+and growth-range guards — as above, so periodic or noise-bound data returns nan
+rather than a spurious slope. Pairs are averaged in 8 blocks whose slope spread
+gives the quoted uncertainty. This is what `DataSeries.analyze` runs by default,
+letting measured data reach the `chaotic` label with no model at all:
+
+![Rosenstein log-divergence fit on Lorenz63 measurements](assets/ntsa_data_l63_rosenstein.png)
+
+*Lorenz63 from measurements only: $\lambda_1 = 0.97 \pm 0.06$ against the true 0.906.*
+
+### Kaplan–Yorke dimension
 
 With the exponents sorted $\lambda_1 \geq \lambda_2 \geq \dots$ and $j$ the
 largest index with $\sum_{i=1}^{j} \lambda_i \geq 0$,
@@ -204,7 +249,7 @@ $$
 conjectured equal to the information dimension [Kaplan & Yorke 1979]. Shown as
 a text box on the delay-portrait panel.
 
-## Torus dimension and the classifier
+## Regime classification
 
 A $k$-torus carries exactly $k$ neutral exponents ($|\lambda| <$ `neutral_tol`)
 and no positive one; chaos replaces one neutral direction with a positive
@@ -222,5 +267,6 @@ the Lorenz96 Ruelle–Takens–Newhouse route is the [worked example](torus.md).
 - Eckmann, Kamphorst & Ruelle (1987). Recurrence plots of dynamical systems. *Europhys. Lett.* 4, 973.
 - Grassberger & Procaccia (1983). Characterization of strange attractors. *Phys. Rev. Lett.* 50, 346.
 - Benettin, Galgani, Giorgilli & Strelcyn (1980). Lyapunov characteristic exponents for smooth dynamical systems. *Meccanica* 15, 9.
+- Rosenstein, Collins & De Luca (1993). A practical method for calculating largest Lyapunov exponents from small data sets. *Physica D* 65, 117.
 - Kaplan & Yorke (1979). Chaotic behavior of multidimensional difference equations. *Lecture Notes in Math.* 730.
 - Kantz & Schreiber (2004). *Nonlinear Time Series Analysis*, 2nd ed., Cambridge University Press.

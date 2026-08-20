@@ -56,4 +56,5 @@ nav:
       - ntsa.tools: api/tools.md
       - ntsa.lyapunov: api/lyapunov.md
       - ntsa.characterize: api/characterize.md
+      - ntsa.data: api/data.md
   - Tutorial notebook: https://github.com/andreanovoa/ntsa/blob/main/tutorial_ntsa.ipynb

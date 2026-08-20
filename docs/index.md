@@ -1,6 +1,7 @@
 # ntsa — nonlinear time-series analysis
 
-Characterizes the dynamical regime of a model from a single long trajectory:
+Characterizes the dynamical regime of a model — or of a measured time series
+alone (`ntsa.data.DataSeries`, no equations needed) — from a single long trajectory:
 delay embedding (optimal lag + false nearest neighbours), Lyapunov exponents, regime
 classification (fixed point / limit cycle period-k / frequency-locked / quasiperiodic / chaotic),
 and a per-case diagnostic figure — one row of 8 panels
@@ -14,6 +15,16 @@ Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2004).
 ![8-panel characterization rows for the demo cases](assets/ntsa_defaults.png)
 
 *Demo output (`python -m ntsa.characterize`): Lorenz63 chaotic and period-1, Van der Pol, Lorenz96.*
+
+The same pipeline runs **from data alone** — a measured scalar record plus,
+optionally, state snapshots for the MDS panel, no model equations: embedding,
+$D_2$, a Rosenstein leading-exponent estimate, and the regime label
+([`ntsa.data`](api/data.md)).
+
+![8-panel characterization of Lorenz63 from measurements only](assets/ntsa_data_l63.png)
+
+*Snapshot-only route (`ntsa.data.DataSeries`): the Lorenz63 case re-characterized
+without the model — $\lambda_1 = 0.97 \pm 0.06$ (true 0.906), classified chaotic.*
 
 ## Ecosystem
 
@@ -61,5 +72,7 @@ supplementary material of Nóvoa & Magri (2022):
   reconstruction using a geometrical construction. *Phys. Rev. A* 45, 3403.
 - Benettin, Galgani, Giorgilli & Strelcyn (1980). Lyapunov characteristic exponents for smooth
   dynamical systems and for Hamiltonian systems. *Meccanica* 15, 9–30.
+- Rosenstein, Collins & De Luca (1993). A practical method for calculating largest Lyapunov
+  exponents from small data sets. *Physica D* 65, 117–134.
 - Ginelli, Poggi, Turchi, Chaté, Livi & Politi (2007). Characterizing dynamics with covariant
   Lyapunov vectors. *Phys. Rev. Lett.* 99, 130601.

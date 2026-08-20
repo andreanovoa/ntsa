@@ -1,7 +1,8 @@
 """Lyapunov exponent tools for continuous-time dynamical-system models.
 
 Benettin QR spectrum (joint RK4 state+tangent integration), leading-exponent
-estimation from perturbation growth, and analytic/finite-difference Jacobians.
+estimation from perturbation growth, analytic/finite-difference Jacobians, and
+a data-only Rosenstein estimator for measured series (no equations needed).
 Reference: Kantz & Schreiber, "Nonlinear Time Series Analysis", Ch. 11.
 """
 
@@ -336,6 +337,94 @@ def leading_lyapunov(model, n_pert=8, eps=1e-6, t_run=None, seed=0):
         lam1 = np.nan
     res = dict(t=t, log_sep=log_sep, mean_log_sep=log_sep.mean(axis=1),
                i1=i1, i2=i2, r2=r2, lam1=lam1, lam1_std=lam1_std, sat=sat, diam=diam)
+    return lam1, lam1_std, res
+
+
+def rosenstein_lyapunov(x, dt, zeta=None, dim=None, theiler=None, k_max=None, n_ref=1000):
+    """Data-only leading Lyapunov exponent from a scalar series (Rosenstein et al. 1993).
+
+    Delay-embeds `x`, pairs each reference point with its nearest neighbour at
+    least a Theiler window away in time, tracks the pairwise divergence, and fits
+    the linear window of the mean log divergence with `fit_log_growth` — so the
+    same rejection guards apply as in `leading_lyapunov` (R^2 >= 0.5 and a real
+    exponential-growth range): periodic or noise-floor-bound data returns nan
+    rather than a spurious slope.
+
+    Parameters
+    ----------
+    x : np.ndarray
+        Scalar series, shape (Nt,).
+    dt : float
+        Sampling time.
+    zeta, dim : int, optional
+        Embedding delay/dimension; default `optimal_lag` / `false_nearest_neighbours`.
+    theiler : int, optional
+        Temporal exclusion window (samples) for the neighbour search; default the
+        mean inter-maximum spacing (the signal's mean period), floored at `zeta`.
+    k_max : int, optional
+        Divergence-tracking horizon (samples); default 10 Theiler windows,
+        capped so every pair can be tracked to the end of the record.
+    n_ref : int
+        Maximum number of reference points, strided over the record.
+
+    Returns
+    -------
+    (lam1, lam1_std, res) mirroring `leading_lyapunov`; `res` plugs into
+    `characterize.plot_lyapunov_fit` and adds zeta, dim, theiler, n_pairs.
+    `lam1_std` is the slope spread across 8 blocks of pairs (pseudo-members),
+    not the raw pair-to-pair scatter. Raises ValueError when the record is too
+    short to form a divergence horizon or enough neighbour pairs.
+    """
+    from scipy.spatial import cKDTree
+
+    from ntsa.tools import delay_embed, false_nearest_neighbours, first_return_map, optimal_lag
+
+    x = np.asarray(x, dtype=float).ravel()
+    if zeta is None:
+        zeta = optimal_lag(x)
+    if dim is None:
+        dim, _ = false_nearest_neighbours(x, zeta)
+    Y = delay_embed(x, dim, zeta)
+    N = len(Y)
+    if theiler is None:
+        _, _, pk = first_return_map(x)
+        theiler = int(np.mean(np.diff(pk))) if pk.size > 2 else zeta * dim
+    w = max(int(theiler), zeta, 1)
+    if k_max is None:
+        k_max = 10 * w
+    k_max = int(min(k_max, N - w - 2))
+    if k_max < 20:
+        raise ValueError(f'series too short: divergence horizon k_max={k_max} (N={N}, theiler={w})')
+
+    # nearest neighbour of each reference point, excluding |i-j| <= w (Theiler
+    # window) and start points whose divergence track would run off the record
+    valid = N - k_max
+    ref = np.arange(0, valid, max(1, valid // n_ref))[:n_ref]
+    tree = cKDTree(Y[:valid])
+    k_query = int(min(valid, 2 * w + 2))
+    _, nbrs = tree.query(Y[ref], k=k_query)
+    pairs_i, pairs_j = [], []
+    for i, row in zip(ref, np.atleast_2d(nbrs)):
+        ok = row[np.abs(row - i) > w]
+        if ok.size:
+            pairs_i.append(int(i))
+            pairs_j.append(int(ok[0]))
+    if len(pairs_i) < 10:
+        raise ValueError(f'only {len(pairs_i)} temporally separated neighbour pairs (theiler={w})')
+
+    ks = np.arange(k_max + 1)
+    d = np.linalg.norm(Y[np.asarray(pairs_i)[:, None] + ks] - Y[np.asarray(pairs_j)[:, None] + ks], axis=-1)
+    logd = np.log(np.maximum(d, 1e-300)).T  # (k_max+1, n_pairs)
+
+    # 8 blocks of pairs as pseudo-members: fit_log_growth's member spread then
+    # measures block-to-block slope variability, not raw pair-to-pair scatter
+    blocks = np.array_split(np.arange(logd.shape[1]), min(8, logd.shape[1]))
+    log_sep = np.column_stack([logd[:, b].mean(axis=1) for b in blocks])
+    t = ks * dt
+    lam1, lam1_std, i1, i2, r2 = fit_log_growth(t, log_sep)
+    res = dict(t=t, log_sep=log_sep, mean_log_sep=log_sep.mean(axis=1),
+               i1=i1, i2=i2, r2=r2, lam1=lam1, lam1_std=lam1_std,
+               zeta=zeta, dim=dim, theiler=w, n_pairs=logd.shape[1])
     return lam1, lam1_std, res
 
 

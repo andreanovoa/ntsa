@@ -4,6 +4,7 @@ Plain assert-based tests; collected by pytest with the rest of the suite, or run
 standalone with ``python tests/test_ntsa.py``.
 """
 
+import os
 import sys
 import time
 import traceback
@@ -277,6 +278,45 @@ def test_kaplan_yorke():
     assert 1.8 < d < 2.2, f'2-torus D_KY = {d}'
 
 
+def test_rosenstein():
+    # data-only leading exponent: L63 measurements read ~ the true 0.906
+    t, y, psi, dt = _l63_traj()
+    lam1, lam1_std, res = lyap.rosenstein_lyapunov(y[:, 0], dt)
+    assert 0.5 < lam1 < 1.5, (lam1, lam1_std)
+    assert res['r2'] >= 0.5 and res['n_pairs'] >= 100
+
+    # DataSeries default 'auto' route reaches 'chaotic' with no model, no external lam1
+    from ntsa.data import DataSeries
+    res_ds = DataSeries(y[:, 0], dt=dt, label='l63 data').analyze(mds=False)
+    assert res_ds['regime'] == 'chaotic', res_ds['regime']
+    assert res_ds['lyap_fit'] is not None and 0.5 < res_ds['lambda1'] < 1.5
+
+
+def test_data_series():
+    # equation-free pipeline: sine -> period-1 cycle with D2 ~ 1, no model touched
+    from ntsa.data import DataSeries
+    ds = DataSeries(_sine(), dt=0.01, label='sine')
+    res = ds.analyze()
+    assert res['regime'] == 'limit_cycle_period_1', res['regime']
+    assert res['zeta'] >= 1 and res['dim'] >= 2
+    assert abs(res['D2'] - 1.0) < 0.5, res['D2']
+    # auto Rosenstein on a sine: fit guards reject -> nan, never a spurious slope
+    assert res['lambda1'] is None or not np.isfinite(res['lambda1'])
+    assert res['spectrum'] is None
+
+    # measured chaotic data + external lam1 estimate -> chaotic; Y drives the MDS
+    t, y, psi, dt = _l63_traj()
+    ds2 = DataSeries(y[:, 0], dt=dt, Y=psi, label='l63 data')
+    res2 = ds2.analyze(lam1=0.9, lam1_std=0.05)
+    assert res2['regime'] == 'chaotic', res2['regime']
+    assert res2['gamma'].shape[1] == 3 and len(res2['t_gamma']) == len(res2['gamma'])
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        out = ds2.characterize(pdf_name=f'{d}/row.pdf')
+        assert out is res2 and os.path.exists(f'{d}/row.pdf') and os.path.exists(f'{d}/row.png')
+
+
 def test_mds_smoke():
     t, y, psi, dt = _l63_traj()
     gamma, idx = ntsa_tools.classical_mds(psi)
@@ -297,7 +337,8 @@ TESTS = [test_ami_fnn_sine, test_delay_embed_recurrence, test_stationary_start,
          test_l63_fnn, test_classify,
          test_respawn_observation,
          test_correlation_dimension_poincare, test_kaplan_yorke,
-         test_bifurcation_smoke, test_bifurcation_ensemble, test_mds_smoke]
+         test_bifurcation_smoke, test_bifurcation_ensemble, test_mds_smoke,
+         test_rosenstein, test_data_series]
 
 if __name__ == '__main__':
     n_fail = 0

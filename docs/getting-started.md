@@ -15,6 +15,16 @@ from ntsa import characterize as chz
 chz.characterize([Lorenz63()], pdf_name='figs/l63.pdf')
 ```
 
+From data alone — no model equations (see [`ntsa.data`](api/data.md)):
+
+```python
+import numpy as np
+from ntsa.data import DataSeries
+
+x = np.load('probe.npy')  # measured scalar record
+DataSeries(x, dt=1e-3, label='probe').characterize(pdf_name='figs/probe.pdf')
+```
+
 ```bash
 python -m ntsa.characterize                     # 4-case demo -> figs/ntsa_defaults.pdf (+ .png)
 python -m ntsa.characterize --model lorenz63 --param rho --values 20 28 100 350
