@@ -8,3 +8,5 @@ build/
 figs/
 *.pkl
 site/
+# nbconvert export of the tutorial (docs workflow)
+docs/tutorials/
