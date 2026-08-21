@@ -14,9 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
 
-from ntsa import lyapunov as lyap
 from ntsa import tools as ntsa_tools
+from ntsa.classification import classify_regime
 from ntsa.tools import fun_PSD
+from ntsa.tools import lyapunov as lyap
 
 
 def save_figs_pdf_tight(pdf_name, figs):
@@ -185,7 +186,7 @@ def plot_row(fig, gs_row, t, x, dt, zeta, dim, t_CR, title=None, evidence=None,
     n_win = int(np.clip(10 * T_osc / dt, 500, 2000))
     n_win = min(n_win, len(x))
     n_min = (dim - 1) * zeta + 2
-    if n_win <= n_min:  # ponytail: guard against windows shorter than the embedding
+    if n_win <= n_min:
         n_win = min(len(x), n_min + 50)
     Y = ntsa_tools.delay_embed(x[-n_win:], dim, zeta)
     R = ntsa_tools.recurrence_matrix(Y)
@@ -447,10 +448,10 @@ def characterize(models, labels=None, obs_idx=0, t_run=None, t_transient=None,
         lam1_cls, lam1_std_cls = lam1, lam1_std
         if exps is not None:
             lam1_cls, lam1_std_cls = float(exps[0]), 0.0
-        regime, evidence = ntsa_tools.classify_regime(x, dt, lam1=lam1_cls,
-                                                      lam1_std=lam1_std_cls,
-                                                      t_total=t[-1] - t[0],
-                                                      exponents=exps)
+        regime, evidence = classify_regime(x, dt, lam1=lam1_cls,
+                                           lam1_std=lam1_std_cls,
+                                           t_total=t[-1] - t[0],
+                                           exponents=exps)
 
         gamma, t_sub = None, None
         if mds:

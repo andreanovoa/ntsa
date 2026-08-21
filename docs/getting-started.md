@@ -28,7 +28,7 @@ DataSeries(x, dt=1e-3, label='probe').characterize(pdf_name='figs/probe.pdf')
 ```bash
 python -m ntsa.characterize                     # 4-case demo -> figs/ntsa_defaults.pdf (+ .png)
 python -m ntsa.characterize --model lorenz63 --param rho --values 20 28 100 350
-python -m ntsa.tools --model lorenz63 --param rho --nP 40   # bifurcation sweep demo
+python -m ntsa.bifurcation --model lorenz63 --param rho --nP 40   # bifurcation sweep demo
 ```
 
 Figures are written relative to the working directory (`figs/`), so `cd` to where

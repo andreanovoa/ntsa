@@ -48,13 +48,26 @@ plugins:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
-  - Theory: theory.md
+  - Theory:
+      - Overview: theory.md
+      - Phase-space reconstruction: theory/reconstruction.md
+      - Signal and attractor diagnostics: theory/diagnostics.md
+      - Lyapunov exponents: theory/lyapunov.md
+      - Regime classification: theory/classification.md
   - Model protocol: protocol.md
-  - Regime classification: classification.md
-  - Worked example — torus dimensions: torus.md
   - API reference:
-      - ntsa.tools: api/tools.md
-      - ntsa.lyapunov: api/lyapunov.md
+      - ntsa.classification: api/classification.md
+      - ntsa.bifurcation: api/bifurcation.md
+      - ntsa.tools:
+          - Overview: api/tools.md
+          - runners: api/tools/runners.md
+          - embedding: api/tools/embedding.md
+          - maps: api/tools/maps.md
+          - geometry: api/tools/geometry.md
+          - statistics: api/tools/statistics.md
+          - lyapunov: api/tools/lyapunov.md
       - ntsa.characterize: api/characterize.md
       - ntsa.data: api/data.md
-  - Tutorials: tutorials.md
+  - Tutorials:
+      - Notebooks: tutorials.md
+      - Worked example — torus dimensions: torus.md

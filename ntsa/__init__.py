@@ -1,9 +1,11 @@
 """ntsa — nonlinear time-series analysis for dynamical-system models.
 
-- `ntsa.tools` — delay embeddings, return/Poincaré maps, recurrence, MDS,
-  regime classification, bifurcation sweeps.
-- `ntsa.lyapunov` — Benettin QR spectrum, leading exponent, Kaplan-Yorke, and
-  the data-only Rosenstein estimator.
+- `ntsa.tools` — the primitives, one module per job: delay embeddings,
+  return/Poincaré maps, recurrence, MDS, signal statistics, and Lyapunov
+  exponents (Benettin QR spectrum, leading exponent, data-only Rosenstein).
+- `ntsa.classification` — `classify_regime`, the regime decision tree.
+- `ntsa.bifurcation` — bifurcation sweeps and diagrams, plus a demo driver
+  (``python -m ntsa.bifurcation``).
 - `ntsa.characterize` — per-case diagnostic figure rows and a demo driver
   (``python -m ntsa.characterize``).
 - `ntsa.data` — `DataSeries`, the equation-free pipeline for raw measured series

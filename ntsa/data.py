@@ -13,9 +13,10 @@ from dataclasses import dataclass, field
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ntsa import lyapunov as lyap
 from ntsa import tools as ntsa_tools
 from ntsa.characterize import _tight, plot_lyapunov_fit, plot_row, save_figs_pdf_tight
+from ntsa.classification import classify_regime
+from ntsa.tools import lyapunov as lyap
 
 
 @dataclass
@@ -88,8 +89,8 @@ class DataSeries:
             except ValueError as err:
                 print(f'[DataSeries] rosenstein_lyapunov skipped: {err}')
                 lam1, lam1_std = None, 0.0
-        regime, evidence = ntsa_tools.classify_regime(x, dt, lam1=lam1, lam1_std=lam1_std,
-                                                      t_total=len(x) * dt)
+        regime, evidence = classify_regime(x, dt, lam1=lam1, lam1_std=lam1_std,
+                                           t_total=len(x) * dt)
         gamma = t_gamma = None
         if mds:
             gamma, idx = ntsa_tools.classical_mds(self.Y if self.Y is not None else E)

@@ -26,7 +26,7 @@ panel) only: $\lambda_1 = 0.97 \pm 0.06$ (true 0.906), classified chaotic.*
 chaotic data reaches the `chaotic` label with no model at all; the estimator's
 fit guards return `nan` on non-chaotic data rather than a spurious slope. Pass a
 float for an external estimate, or `None` to skip — see the
-[regime classification](../classification.md) page.
+[regime classification](../theory/classification.md) section.
 
 ## Full reference
 

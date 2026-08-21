@@ -127,10 +127,13 @@ With no `time_derivative`, `lyapunov_spectrum` (the QR route) is unavailable —
 Every `ntsa` function sees the two routes identically:
 
 ```python
+from ntsa.characterize import characterize
 from ntsa.tools import run_long
 
 for model in (Lorenz63IVP(), Lorenz63Map()):
     t, y, psi = run_long(model, t_run=20 * model.t_lyap)
     print(type(model).__name__, y.shape)   # both: (1105, 3)
     model.close()
+
+characterize([Lorenz63IVP(), Lorenz63Map()])   # one 8-panel diagnostic row per model
 ```

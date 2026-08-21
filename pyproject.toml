@@ -39,7 +39,7 @@ Repository = "https://github.com/andreanovoa/ntsa"
 Issues = "https://github.com/andreanovoa/ntsa/issues"
 
 [tool.setuptools]
-packages = ["ntsa"]
+packages = ["ntsa", "ntsa.tools"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
