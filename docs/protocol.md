@@ -137,3 +137,15 @@ for model in (Lorenz63IVP(), Lorenz63Map()):
 
 characterize([Lorenz63IVP(), Lorenz63Map()])   # one 8-panel diagnostic row per model
 ```
+
+![8-panel characterization of Lorenz63IVP and Lorenz63Map](assets/ntsa_protocol_l63.png)
+
+*Same equations, two integration strategies: the delay portrait, return
+map, PSD and recurrence plot line up almost exactly between the continuous
+`IVP` baseline (top, $\lambda_1=0.914$) and the discrete `RK4` baseline
+(bottom, $\lambda_1=0.903$), both close to the reference $0.906$. The last
+panel differs because it must: `Lorenz63IVP` defines `time_derivative`, so
+`ntsa` gets the full QR spectrum (three exponents); `Lorenz63Map` only
+steps with `time_step`, so `ntsa` falls back to the single leading exponent
+from `leading_lyapunov` — exactly the distinction in the protocol table's
+last row.*
