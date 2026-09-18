@@ -1,7 +1,7 @@
 # Model protocol
 
 Every function takes a model by duck type — no base-class requirement.
-[`dynamodels`](https://github.com/andreanovoa/dynamodels) is the reference
+[`dynamodels`](https://andreanovoa.github.io/dynamodels/) is the reference
 implementation (and supplies the demo/test models), but any object with this
 interface works:
 
