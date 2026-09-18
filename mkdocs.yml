@@ -49,7 +49,7 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Model-based ntsa: protocol.md
-  - Data-driven ntsa: api/data.md
+  - Data-driven ntsa: data_driven.md
   - Theory:
       - Overview: theory.md
       - Phase-space reconstruction: theory/reconstruction.md

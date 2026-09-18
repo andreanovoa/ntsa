@@ -22,7 +22,7 @@ just `dynamodels` — see [Model-based ntsa](protocol.md).
 
 ### Data-driven
 
-From data alone — no model equations (see [Data-driven ntsa](api/data.md)):
+From data alone — no model equations (see [Data-driven ntsa](data_driven.md)):
 
 ```python
 import numpy as np
