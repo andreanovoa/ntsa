@@ -43,9 +43,8 @@ python -m ntsa.characterize          # 4-case demo -> figs/ntsa_defaults.pdf (+ 
 ```
 
 
-Works with any model implementing the
-[model protocol](https://andreanovoa.github.io/ntsa/protocol/) —
-[`dynamodels`](https://github.com/andreanovoa/dynamodels) is the reference
+Works with any model implementing the model protocol —
+[`dynamodels`](https://andreanovoa.github.io/dynamodels/) is the reference
 implementation. Part of the same ecosystem as
 [romda](https://github.com/andreanovoa/real-time-bias-aware-DA) (real-time
 bias-aware data assimilation).
