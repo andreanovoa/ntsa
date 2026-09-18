@@ -48,13 +48,14 @@ plugins:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Model-based ntsa: protocol.md
+  - Data-driven ntsa: api/data.md
   - Theory:
       - Overview: theory.md
       - Phase-space reconstruction: theory/reconstruction.md
       - Signal and attractor diagnostics: theory/diagnostics.md
       - Lyapunov exponents: theory/lyapunov.md
       - Regime classification: theory/classification.md
-  - Model protocol: protocol.md
   - API reference:
       - ntsa.classification: api/classification.md
       - ntsa.bifurcation: api/bifurcation.md

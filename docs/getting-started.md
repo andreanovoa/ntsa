@@ -8,6 +8,8 @@ pip install ntsa
 
 ## Quickstart
 
+### Model-based
+
 ```python
 from dynamodels.physical import Lorenz63
 from ntsa import characterize as chz
@@ -15,7 +17,12 @@ from ntsa import characterize as chz
 chz.characterize([Lorenz63()], pdf_name='figs/l63.pdf')
 ```
 
-From data alone — no model equations (see [`ntsa.data`](api/data.md)):
+Works with any model implementing the [model protocol](protocol.md), not
+just `dynamodels` — see [Model-based ntsa](protocol.md).
+
+### Data-driven
+
+From data alone — no model equations (see [Data-driven ntsa](api/data.md)):
 
 ```python
 import numpy as np
