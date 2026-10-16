@@ -10,7 +10,7 @@ and [`ntsa.bifurcation`](bifurcation.md).
 | Module | What it does |
 | --- | --- |
 | [`runners`](tools/runners.md) | Fresh model instances (`respawn`) and long integrations past the transient (`run_long`). |
-| [`embedding`](tools/embedding.md) | Delay embeddings and lag/dimension selection (AMI, FNN). |
+| [`embedding`](tools/embedding.md) | Delay embeddings and lag/dimension selection (AMI, FNN, Cao, Takens' bound). |
 | [`maps`](tools/maps.md) | Return maps, Poincaré sections, peak-based transient/period detection. |
 | [`geometry`](tools/geometry.md) | Attractor geometry from pairwise distances: recurrence matrices, classical MDS, correlation dimension. |
 | [`statistics`](tools/statistics.md) | Power spectral density, autocorrelation, summary moments. |

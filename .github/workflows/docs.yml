@@ -16,5 +16,5 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install mkdocs-material "mkdocstrings[python]" nbconvert
-      - run: python -m nbconvert --to html tutorial_ntsa.ipynb --output-dir docs/tutorials
+      - run: python -m nbconvert --to html tutorial_ntsa.ipynb tutorial_embedding_dimension.ipynb --output-dir docs/tutorials
       - run: mkdocs gh-deploy --force
