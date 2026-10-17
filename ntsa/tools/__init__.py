@@ -3,7 +3,7 @@
 One module per job, everything re-exported here (``from ntsa.tools import ...``):
 
 - `runners` — `respawn`, `run_long`
-- `embedding` — delay embeddings and lag/dimension selection
+- `embedding` — delay embeddings and lag/dimension selection (AMI, FNN, Cao, Takens)
 - `maps` — return maps, Poincare sections, peak-based transient/period detection
 - `geometry` — recurrence matrices, classical MDS, correlation dimension
 - `statistics` — PSD, autocorrelation, summary statistics
@@ -16,7 +16,14 @@ Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2nd ed., CUP 200
 """
 
 from ntsa.tools import lyapunov
-from ntsa.tools.embedding import average_mutual_information, delay_embed, false_nearest_neighbours, optimal_lag
+from ntsa.tools.embedding import (
+    average_mutual_information,
+    cao_embedding_dimension,
+    delay_embed,
+    false_nearest_neighbours,
+    optimal_lag,
+    takens_bound,
+)
 from ntsa.tools.geometry import classical_mds, correlation_dimension, recurrence_matrix
 from ntsa.tools.lyapunov import kaplan_yorke, leading_lyapunov, lyapunov_spectrum, rosenstein_lyapunov
 from ntsa.tools.maps import count_peak_clusters, first_return_map, poincare_section, stationary_start
@@ -24,11 +31,11 @@ from ntsa.tools.runners import respawn, run_long
 from ntsa.tools.statistics import autocorrelation, fun_PSD, signal_stats
 
 __all__ = [
-    'autocorrelation', 'average_mutual_information', 'classical_mds', 'correlation_dimension',
+    'autocorrelation', 'average_mutual_information', 'cao_embedding_dimension', 'classical_mds', 'correlation_dimension',
     'count_peak_clusters', 'delay_embed', 'false_nearest_neighbours', 'first_return_map',
     'fun_PSD', 'kaplan_yorke', 'leading_lyapunov', 'lyapunov', 'lyapunov_spectrum',
     'optimal_lag', 'poincare_section', 'recurrence_matrix', 'respawn', 'rosenstein_lyapunov',
-    'run_long', 'signal_stats', 'stationary_start',
+    'run_long', 'signal_stats', 'stationary_start', 'takens_bound',
 ]
 
 _MOVED = {'classify_regime': 'ntsa.classification',

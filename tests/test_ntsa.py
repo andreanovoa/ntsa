@@ -151,6 +151,72 @@ def test_l63_fnn():
     assert d in (3, 4), f'FNN dimension = {d} (fractions {fractions}), expected 3 or 4'
 
 
+def test_cao_sine():
+    d, E1, E2 = ntsa_tools.cao_embedding_dimension(_sine(), lag=25)
+    assert d == 2, f'Cao dimension = {d} (E1 {E1}), expected 2 for a sine'
+    assert E1.shape == E2.shape == (10,)
+
+
+def test_cao_l63():
+    model = _l63_model()
+    t, y, psi, dt = _l63_traj()
+    x = y[:, 0]
+    zeta = ntsa_tools.optimal_lag(x, max_lag=max(2, int(model.t_CR / model.dt)))
+    d, E1, E2 = ntsa_tools.cao_embedding_dimension(x, zeta, theiler=zeta)
+    assert d in (3, 4), f'Cao dimension = {d} (E1 {E1}), expected 3 or 4'
+    assert E2.min() < 0.5, f'E2 = {E2} stays near 1: L63 x read as stochastic'
+
+
+def test_cao_fnn_kuznetsov():
+    # quasiperiodic 2-torus in a 3-D flow: both estimators unfold it in 3 or 4 dimensions
+    from dynamodels.physical import Kuznetsov
+    model = Kuznetsov()
+    t, y, psi = ntsa_tools.run_long(ntsa_tools.respawn(model), t_run=60 * model.t_CR)
+    x = y[:, 0]
+    zeta = ntsa_tools.optimal_lag(x, max_lag=max(2, int(model.t_CR / model.dt)))
+    d_cao, E1, _ = ntsa_tools.cao_embedding_dimension(x, zeta, theiler=zeta)
+    d_fnn, fractions = ntsa_tools.false_nearest_neighbours(x, zeta)
+    assert d_cao in (3, 4), f'Cao dimension = {d_cao} (E1 {E1}), expected 3 or 4'
+    assert d_fnn in (3, 4), f'FNN dimension = {d_fnn} (fractions {fractions}), expected 3 or 4'
+
+
+def test_cao_noise():
+    x = np.random.default_rng(0).standard_normal(4000)
+    _, _, E2 = ntsa_tools.cao_embedding_dimension(x, lag=1)
+    assert np.all(np.abs(E2 - 1) < 0.1), f'white noise E2 = {E2}, expected ~1 for every d'
+
+
+def test_cao_theiler_window():
+    from scipy.spatial import cKDTree
+
+    from ntsa.tools.embedding import _nearest_valid
+    Y = ntsa_tools.delay_embed(_sine(), 2, 25)
+    q = np.arange(0, len(Y), 7)
+    j = _nearest_valid(cKDTree(Y), Y, q, theiler=30, r_min=1e-10)
+    assert np.all(np.abs(j - q) > 30), 'neighbour inside the Theiler window'
+    try:
+        ntsa_tools.cao_embedding_dimension(np.arange(20.), lag=5)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('short series accepted')
+
+
+def test_takens_bound_l63():
+    assert ntsa_tools.takens_bound(3)[0] == 7, 'Takens bound, D = 3 (state dimension)'
+    assert ntsa_tools.takens_bound(2.06)[0] == 5, 'Sauer et al. bound, D_box = 2.06'
+    model = _l63_model()
+    t, y, psi, dt = _l63_traj()
+    x = y[:, 0]
+    zeta = ntsa_tools.optimal_lag(x, max_lag=max(2, int(model.t_CR / model.dt)))
+    d_cao, _, _ = ntsa_tools.cao_embedding_dimension(x, zeta, theiler=zeta)
+    d_fnn, _ = ntsa_tools.false_nearest_neighbours(x, zeta)
+    m_max, D = ntsa_tools.takens_bound(x=x, lag=zeta, d_embed=d_cao)
+    assert 1.3 < D < 2.3, f'D2 from the series = {D}, expected near 2.06'
+    for name, d in (('Cao', d_cao), ('FNN', d_fnn)):
+        assert D < d <= m_max, f'{name} dimension {d} outside (D, 2D+1] = ({D:.2f}, {m_max}]'
+
+
 def test_classify():
     # sine -> period-1 limit cycle
     label, ev = ntsa_tools.classify_regime(_sine(), dt=1.0)
@@ -334,7 +400,8 @@ def test_mds_smoke():
 TESTS = [test_ami_fnn_sine, test_delay_embed_recurrence, test_stationary_start,
          test_l63_spectrum,
          test_l63_leading, test_l96_leading_guard, test_vdp_leading_not_chaotic,
-         test_l63_fnn, test_classify,
+         test_l63_fnn, test_cao_sine, test_cao_l63, test_cao_fnn_kuznetsov, test_cao_noise,
+         test_cao_theiler_window, test_takens_bound_l63, test_classify,
          test_respawn_observation,
          test_correlation_dimension_poincare, test_kaplan_yorke,
          test_bifurcation_smoke, test_bifurcation_ensemble, test_mds_smoke,
