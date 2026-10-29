@@ -2,7 +2,7 @@
 
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21843575-blue.svg)](https://doi.org/10.5281/zenodo.21843575)
 [![PyPI](https://img.shields.io/pypi/v/ntsa)](https://pypi.org/project/ntsa/)
-[![docs](https://github.com/andreanovoa/ntsa/actions/workflows/docs.yml/badge.svg)](https://andreanovoa.github.io/ntsa/)
+[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://andreanovoa.github.io/ntsa/)
 
 Characterizes the dynamical regime of a model from a single long trajectory:
 - Lyapunov exponents
@@ -55,7 +55,7 @@ If you use this repository, please cite the software archive:
 
 ```bibtex
 @software{novoa_ntsa,
-  author = {Nóvoa},
+  author = {Nóvoa, Andrea},
   title = {ntsa: nonlinear time-series analysis for dynamical-system models},
   publisher = {Zenodo},
   doi = {10.5281/zenodo.21843575},
@@ -77,7 +77,7 @@ supplementary material of Nóvoa & Magri (2022):
   url = {https://doi.org/10.1017/jfm.2022.653},
   eprint = {2106.06409},
   archivePrefix = {arXiv},
-  author = {Nóvoa and Magri},
+  author = {Nóvoa, Andrea and Magri, Luca},
 }
 ```
 
