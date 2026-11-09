@@ -57,7 +57,8 @@ def test_2d_components_and_shuffle_check(tmp_path):
     assert (tmp_path / 'report' / 'animation.gif').exists()
     stats = json.loads((tmp_path / 'report' / 'stats.json').read_text())
     assert stats['shape (Nt, space, components)'] == [nt, [ny, nx], ['u', 'v']]
-    assert 'data:image/png;base64' in open(page).read()
+    text = open(page).read()
+    assert text.count('<figcaption>') == 11                  # gif + 10 figures, each with its caption
 
     shuffled = FieldSeries(u[rng.permutation(nt)], dt=0.05, components=('u', 'v')).analyze()
     assert any('not time-resolved' in c for c in shuffled['checks'])
@@ -86,7 +87,7 @@ def test_reference_overlay(tmp_path):
     with pytest.raises(ValueError):
         fs.add_reference('nonsense', [0], [0], 'x')
     fs.analyze()
-    fig = fs.plot_statistics()
+    fig = fs.plot_spectrum()
     labels = [ln.get_label() for ax in fig.axes for ln in ax.get_lines()]
     assert 'Author et al. (2020)' in labels
     page = open(fs.report(tmp_path / 'r', gif=False)).read()

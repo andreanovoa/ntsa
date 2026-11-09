@@ -11,8 +11,9 @@ dimensions, optionally with several components (e.g. two velocity components). `
 - the autocorrelation and Welch spectrum of a few probes, the integral time and the dominant frequency;
 - the POD (snapshot method) energy and the number of modes for 90 % and 99 % of the fluctuation energy.
 
-`report` writes the figures, an animation (a space-time diagram in 1D), the numbers in ``stats.json``, and one
-self-contained HTML page with the figures embedded. Fluctuations are taken about the time mean at each point.
+`figures` draws one figure per quantity, each with a caption that says what it shows and what to look for;
+`report` writes them, an animation (a space-time diagram in 1D), the numbers in ``stats.json``, and one
+self-contained HTML page with the captioned figures embedded. Fluctuations are taken about the time mean at each point.
 Periodic directions are transformed as they are; non-periodic ones are Hann-windowed before the transform.
 """
 
@@ -32,13 +33,15 @@ from ntsa.tools import stationary_start
 
 #: figure style of the user's papers (washout-free ESN-DA): serif Termes/STIX, no top and right spines
 STYLE = {'font.family': 'serif', 'font.serif': ['TeX Gyre Termes', 'STIXGeneral'], 'mathtext.fontset': 'stix',
-         'pdf.fonttype': 42, 'font.size': 10, 'legend.fontsize': 8, 'axes.spines.top': False,
+         'pdf.fonttype': 42, 'font.size': 10, 'legend.fontsize': 8, 'axes.labelsize': 10,
+         'xtick.labelsize': 9, 'ytick.labelsize': 9, 'lines.linewidth': 1.2, 'savefig.dpi': 200, 'axes.spines.top': False,
          'axes.spines.right': False, 'legend.frameon': False}
 #: colour-blind-safe colours (Okabe-Ito, with Paul Tol's red for marks); the reference data are grey and dashed
 C = {'blue': '#0072B2', 'orange': '#E69F00', 'green': '#009E73', 'vermilion': '#D55E00', 'pink': '#CC79A7',
      'sky': '#56B4E9', 'mark': '#CC3311', 'grey': '#BBBBBB'}
 INK = '#333333'
 C_REF = '0.45'
+WIDTH = 7.2                                         # inches: full text width of the papers
 SERIES = [C[k] for k in ('blue', 'orange', 'green', 'vermilion', 'pink', 'sky')]
 REF_STYLE = dict(color=C_REF, ls='--', lw=1.2, zorder=1)
 #: quantities a reference curve can be laid over, and the panel that holds each
@@ -229,25 +232,27 @@ class FieldSeries:
             r['corr'].append((lag, Ra, _integral(Ra, self.dx[a])))
 
     def _probes(self, n_probes):
-        """Probes evenly spaced along the domain diagonal: autocorrelation, Welch spectrum, integral time."""
+        """Time statistics averaged over up to 256 grid points per component: autocorrelation, Welch spectrum,
+        integral time; `n_probes` of them are kept for the probe list of the report."""
         r = self.results
-        frac = (np.arange(n_probes) + 0.5) / n_probes
-        r['probes'] = [tuple(int(f * n) for n in self.space) for f in frac]
+        npts = int(np.prod(self.space))
+        pts = np.unique(np.linspace(0, npts - 1, min(npts, 256)).astype(int))
+        r['probes'] = [tuple(int(i) for i in np.unravel_index(p, self.space)) for p in pts[:: max(1, len(pts) // n_probes)]]
         nlag = min(self.nt // 2, 2000)
+        nseg = min(self.nt, 1024)
         r['acf'], r['psd'] = [], []
-        T = []
-        for p in r['probes']:
-            x = np.nan_to_num(self.u[(slice(None), *p, 0)].astype(np.float64))
-            x = x - x.mean()
-            c = np.correlate(x, x, mode='full')[len(x) - 1:len(x) + nlag] / (len(x) - np.arange(min(nlag + 1, len(x))))
-            c = c / (c[0] or 1.0)
-            r['acf'].append(c)
-            T.append(_integral(c, self.dt))
-            f, s = welch(x, fs=1 / self.dt, nperseg=min(len(x), 1024))
-            r['psd'].append((f, s))
+        for c in range(len(self.components)):
+            X = np.nan_to_num(self.u[..., c].reshape(self.nt, -1)[:, pts].astype(np.float64))
+            X = X - X.mean(0)
+            F = np.fft.rfft(X, n=2 * self.nt, axis=0)
+            acf = np.fft.irfft(np.abs(F) ** 2, axis=0)[:nlag + 1].mean(1) / (self.nt - np.arange(nlag + 1))
+            r['acf'].append(acf / (acf[0] or 1.0))
+            f, s = welch(X, fs=1 / self.dt, nperseg=nseg, axis=0)
+            r['psd'].append((f, s.mean(1)))
         r['acf_lag'] = np.arange(nlag + 1) * self.dt
-        r['T_int'] = float(np.mean(T))
-        r['acf_lag1'] = float(np.mean([c[1] for c in r['acf']])) if nlag else float('nan')
+        r['n_points'] = len(pts)
+        r['T_int'] = float(np.mean([_integral(a, self.dt) for a in r['acf']]))
+        r['acf_lag1'] = float(np.mean([a[1] for a in r['acf']])) if nlag else float('nan')
         s_mean = np.mean([s for _, s in r['psd']], axis=0)
         i = int(np.argmax(s_mean[1:])) + 1          # a peak must stand out of the low-frequency plateau
         r['f_peak'] = float(r['psd'][0][0][i]) if s_mean[i] > 2 * s_mean[1:4].mean() else None
@@ -329,177 +334,285 @@ class FieldSeries:
         """2D view of a spatial array (mid-plane of the first axis in 3D)."""
         return a[a.shape[0] // 2] if a.ndim == 3 else a
 
-    def plot_fields(self):
-        with plt.rc_context(STYLE):
-            return self._plot_fields()
+    def _map(self, fig, ax, a, label, cmap=None):
+        """Image of a 2D field with its colour bar; signed fields on RdBu_r centred on zero."""
+        norm, cm = (plt.Normalize(np.nanmin(a), np.nanmax(a)), cmap) if cmap else _signed_norm(a)
+        m = ax.imshow(a, origin='lower', extent=self._extent(), norm=norm, cmap=cm)
+        for side in ('top', 'right'):
+            ax.spines[side].set_visible(True)
+        fig.colorbar(m, ax=ax, label=label, shrink=0.85, aspect=20)
+        return m
 
-    def _plot_fields(self):
-        """Snapshots, mean and rms (2D/3D), or space-time diagram with mean and rms profiles (1D)."""
-        r = self.results
-        nc = len(self.components)
-        if len(self.space) == 1:
-            fig, axes = plt.subplots(nc, 2, figsize=(10, 3.2 * nc), width_ratios=(3, 1), squeeze=False,
-                                     layout='constrained')
+    # -- figures: one per quantity ------------------------------------------------------------------------------
+    def figures(self):
+        """Ordered list of (name, figure, caption): one figure per quantity, each explained by its caption."""
+        if self.results is None:
+            self.analyze()
+        r, nd = self.results, len(self.space)
+        out = []
+        with plt.rc_context(STYLE):
+            out.append(('snapshots', self.plot_snapshots(), self._cap_snapshots()))
+            out.append(('mean_rms', self.plot_mean_rms(),
+                        ('Time mean (top) and rms of the fluctuations (bottom) along the domain.' if nd == 1 else
+                         'Time mean (left) and rms of the fluctuations (right).')
+                        + ' Structure in the mean is the forced or statistically steady pattern; a uniform rms '
+                        'means statistically homogeneous fluctuations.'
+                        + (' Three-dimensional record: mid-plane of the first axis.' if nd == 3 else '')))
+            out.append(('energy', self.plot_energy(),
+                        r'Fluctuation energy averaged over the domain, \(\tfrac12\langle q^{\prime 2}\rangle\), against '
+                        'time. A drift or a jump at the start is a transient to discard'
+                        + (f'; the dotted line marks where the energy stops drifting (t = '
+                           f'{r["i_stationary"] * self.dt:.3g})' if r['i_stationary'] else '')
+                        + ('. The snapshots are not time-resolved, so they are drawn as points.'
+                           if r['acf_lag1'] < 0.5 else '.')))
+            out.append(('pdf', self.plot_pdf(),
+                        'Probability density of the fluctuations, each normalised by its rms, against the Gaussian '
+                        '(grey). Tails heavier than the Gaussian point to intermittency; an asymmetric density shows '
+                        'up as a non-zero skewness.'))
+            out.append(('spectrum', self.plot_spectrum(),
+                        'Time-averaged energy spectrum of the fluctuations' + (
+                            ', shell-averaged over the wavenumber magnitude' if nd > 1 else '') +
+                        ', normalised so that its integral is the fluctuation energy; the dealiased tail is cut. '
+                        'The peak gives the energy-containing scale; the decay at high wavenumbers shows how well '
+                        'the grid resolves the field, and a pile-up at the end would mean under-resolution.'))
+            out.append(('correlation', self.plot_correlation(),
+                        'Two-point correlation of the fluctuations along each space axis; the legend gives the '
+                        'integral length (integral up to the first zero crossing). A correlation still far from zero '
+                        'at half the domain means the box is too small for the largest structures.'))
+            if r['acf_lag1'] >= 0.5:
+                out.append(('autocorrelation', self.plot_autocorrelation(),
+                            f'Autocorrelation in time, averaged over {r["n_points"]} grid points. Its integral up '
+                            'to the first zero is the integral time, which sets how many independent samples the '
+                            'record holds.'))
+                out.append(('frequency', self.plot_frequency(),
+                            f'Welch frequency spectrum, averaged over {r["n_points"]} grid points' + (
+                                f'; the dotted line marks the dominant frequency, f = {r["f_peak"]:.3g}'
+                                if r['f_peak'] else '; there is no dominant frequency (broadband spectrum)') + '.'))
+            out.append(('pod_energy', self.plot_pod_energy(),
+                        f'Energy fraction of each POD mode (snapshot method, {min(self.nt, self.max_snapshots)} '
+                        f'snapshots); {r["pod_n90"]} modes hold 90 % of the fluctuation energy and {r["pod_n99"]} '
+                        'hold 99 % (dotted lines). These numbers set the scale of any reduced-order model.'))
+            out.append(('pod_modes', self.plot_pod_modes(),
+                        f'Leading POD modes of {self._words(0)}, with their energy fraction. Modes in pairs with '
+                        'equal energy and shifted shapes are travelling structures.'))
+        return out
+
+    def _words(self, c):
+        return f'\\({self._sym[c]}\\)'                    # inline maths for the HTML captions (MathJax)
+
+    def _cap_snapshots(self):
+        nd = len(self.space)
+        if nd == 1:
+            return (f'Space-time diagram of the first {min(self.nt, 1500)} snapshots. Tilted streaks are travelling '
+                    'structures; their slope is the propagation speed.')
+        return ('Three snapshots spanning the record, on one colour scale per component'
+                + (', mid-plane of the first axis' if nd == 3 else '') + '. The animation shows the evolution.')
+
+    def plot_snapshots(self):
+        nc, nd = len(self.components), len(self.space)
+        if nd == 1:
+            fig, axes = plt.subplots(nc, 1, figsize=(WIDTH, 2.4 * nc), squeeze=False, layout='constrained')
             x = np.arange(self.space[0]) * self.dx[0]
             n = min(self.nt, 1500)
-            for c, (a, b) in enumerate(axes):
+            for c, ax in enumerate(axes[:, 0]):
                 norm, cmap = _signed_norm(self.u[:n, :, c])
-                m = a.pcolormesh(self.t[:n], x, self.u[:n, :, c].T, norm=norm, cmap=cmap, shading='auto',
-                                 rasterized=True)
-                fig.colorbar(m, ax=a, label=f'${self._sym[c]}$', pad=0.01)
-                a.set(xlabel='$t$', ylabel='$x$')
-                b.plot(r['mean'][:, c], x, color=C['blue'], label='mean')
-                b.plot(r['rms'][:, c], x, color=C['orange'], label='rms')
-                self._overlay(b, 'mean', swap=True)
-                self._overlay(b, 'rms', swap=True)
-                b.set(xlabel=f'${self._sym[c]}$', ylabel='$x$', ylim=(x[0], x[-1]))
-                b.legend()
-            for ax, s in zip(axes.ravel(), 'abcdefgh'):
-                _letter(ax, s)
+                m = ax.pcolormesh(self.t[:n], x, self.u[:n, :, c].T, norm=norm, cmap=cmap, shading='auto',
+                                  rasterized=True)
+                fig.colorbar(m, ax=ax, label=f'${self._sym[c]}$', pad=0.01, aspect=25)
+                ax.set(xlabel='$t$', ylabel='$x$')
             return fig
         times = np.linspace(0, self.nt - 1, 3).astype(int)
-        fig, axes = plt.subplots(nc, 5, figsize=(14, 2.9 * nc), squeeze=False, layout='constrained')
-        ext = self._extent()
-        letters = iter('abcdefghijklmnopqrst')
+        fig, axes = plt.subplots(nc, 3, figsize=(WIDTH, 2.3 * nc), squeeze=False, sharex=True, sharey=True,
+                                 layout='constrained')
         for c in range(nc):
             snaps = [self._slice(self.u[i, ..., c]) for i in times]
             norm, cmap = _signed_norm(np.stack(snaps))
-            for ax, s, i in zip(axes[c, :3], snaps, times):
-                m = ax.imshow(s, origin='lower', extent=ext, norm=norm, cmap=cmap)
-                ax.text(0.98, 0.02, f't = {i * self.dt:.4g}', transform=ax.transAxes, ha='right', fontsize=7,
-                        color=INK, bbox=dict(fc='white', ec='none', alpha=0.7, pad=1))
-            fig.colorbar(m, ax=axes[c, :3], label=f'${self._sym[c]}$', shrink=0.9)
-            mean = self._slice(r['mean'][..., c])
-            norm, cmap = _signed_norm(mean)
-            m = axes[c, 3].imshow(mean, origin='lower', extent=ext, norm=norm, cmap=cmap)
-            fig.colorbar(m, ax=axes[c, 3], label=rf'$\overline{{{self._sym[c]}}}$', shrink=0.9)
-            m = axes[c, 4].imshow(self._slice(r['rms'][..., c]), origin='lower', extent=ext, cmap='Blues')
-            fig.colorbar(m, ax=axes[c, 4], label=f"${self._sym[c]}'_{{\\mathrm{{rms}}}}$", shrink=0.9)
-            for ax in axes[c]:
-                ax.set(xlabel='$x$', ylabel='$y$')
-                _letter(ax, next(letters))
+            for ax, snap, i in zip(axes[c], snaps, times):
+                m = ax.imshow(snap, origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+                for side in ('top', 'right'):
+                    ax.spines[side].set_visible(True)
+                if c == 0:
+                    ax.text(0.5, 1.03, f'$t$ = {i * self.dt:.3g}', transform=ax.transAxes, ha='center',
+                            va='bottom', fontsize=9)
+            fig.colorbar(m, ax=axes[c], label=f'${self._sym[c]}$', shrink=0.9, aspect=15)
+            axes[c, 0].set_ylabel('$y$')
+        for ax in axes[-1]:
+            ax.set_xlabel('$x$')
         return fig
 
-    def plot_statistics(self):
-        with plt.rc_context(STYLE):
-            return self._plot_statistics()
+    def plot_mean_rms(self):
+        r, nc = self.results, len(self.components)
+        if len(self.space) == 1:
+            x = np.arange(self.space[0]) * self.dx[0]
+            fig, (a, b) = plt.subplots(2, 1, figsize=(WIDTH, 3.2), sharex=True, layout='constrained')
+            for c, col in zip(range(nc), SERIES):
+                a.plot(x, r['mean'][:, c], color=col, label=f'${self._sym[c]}$')
+                b.plot(x, r['rms'][:, c], color=col)
+            self._overlay(a, 'mean')
+            self._overlay(b, 'rms')
+            a.set(ylabel=r'$\overline{q}$')
+            b.set(xlabel='$x$', ylabel=r'$q^\prime_\mathrm{rms}$', xlim=(x[0], x[-1]))
+            if nc > 1 or a.get_legend_handles_labels()[0][1:]:
+                a.legend(ncol=nc)
+            return fig
+        fig, axes = plt.subplots(nc, 2, figsize=(WIDTH * 0.75, 2.5 * nc), squeeze=False, sharex=True,
+                                 sharey=True, layout='constrained')
+        for c in range(nc):
+            s = self._sym[c]
+            self._map(fig, axes[c, 0], self._slice(r['mean'][..., c]), rf'$\overline{{{s}}}$')
+            self._map(fig, axes[c, 1], self._slice(r['rms'][..., c]), rf'${s}^\prime_\mathrm{{rms}}$', 'Blues')
+            axes[c, 0].set_ylabel('$y$')
+        for ax in axes[-1]:
+            ax.set_xlabel('$x$')
+        return fig
 
-    def _plot_statistics(self):
-        """Energy history, pdf, energy spectrum, two-point correlation, probe autocorrelation and spectrum."""
+    def _single(self):
+        return plt.subplots(figsize=(WIDTH / 2, 2.5), layout='constrained')
+
+    def plot_energy(self):
         r = self.results
-        fig, axes = plt.subplots(2, 3, figsize=(12, 6.4), layout='constrained')
-        (a, b, c), (d, e, f) = axes
-        a.plot(self.t, r['energy_t'], color=INK, lw=0.8)
+        fig, ax = plt.subplots(figsize=(WIDTH, 2.2), layout='constrained')
+        if r['acf_lag1'] >= 0.5:
+            ax.plot(self.t, r['energy_t'], color=INK, lw=0.7)
+        else:
+            ax.plot(self.t, r['energy_t'], '.', color=INK, ms=1.5, mec='none')
         if r['i_stationary']:
-            a.axvline(r['i_stationary'] * self.dt, color=C['mark'], ls=':', lw=1)
-            a.text(r['i_stationary'] * self.dt, 1.0, ' stationary from here', transform=a.get_xaxis_transform(),
-                   va='top', fontsize=7, color=C['mark'])
-        a.set(xlabel='$t$', ylabel='fluctuation energy (domain mean)')
-        self._overlay(a, 'energy')
-        g = np.linspace(-6, 6, 400)
-        for (xc, h), name, col in zip(r['pdf'], self._sym, SERIES):
-            b.semilogy(xc, np.where(h > 0, h, np.nan), color=col, label=f"${name}'$")
-        b.semilogy(g, np.exp(-g ** 2 / 2) / np.sqrt(2 * np.pi), color=C['grey'], lw=1, label='Gaussian')
-        self._overlay(b, 'pdf')
-        b.set(xlabel=r"$q'/q'_{\mathrm{rms}}$", ylabel='pdf', ylim=(1e-5, 1))
-        b.legend()
-        c.loglog(r['k'], r['E'], color=INK)
-        self._overlay(c, 'E')
-        c.set(xlabel='$k$', ylabel='$E(k)$', ylim=(max(r['E'].max() * 1e-12, r['E'][r['E'] > 0].min()),
-                                                   2 * r['E'].max()))
-        for (lag, R, L), name, col in zip(r['corr'], self.axes_names, SERIES):
-            d.plot(lag, R, color=col, label=f'along ${name}$, $L$ = {L:.3g}')
-        d.axhline(0, color=C['grey'], lw=0.8, zorder=0)
-        self._overlay(d, 'corr')
-        d.set(xlabel=r'separation $\Delta$', ylabel=r'$R(\Delta)$')
-        d.legend()
-        for acf, col, p in zip(r['acf'], SERIES, r['probes']):
-            e.plot(r['acf_lag'], acf, color=col, lw=1, label=f'probe {p}')
-            e.axhline(0, color=C['grey'], lw=0.8, zorder=0)
-        e.set(xlabel=r'lag $\tau$', ylabel=r'$\rho(\tau)$', xlim=(0, min(r['acf_lag'][-1], 20 * r['T_int'])))
-        self._overlay(e, 'acf')
-        e.legend(fontsize=7)
-        for (fq, s), col in zip(r['psd'], SERIES):
-            f.loglog(fq[1:], s[1:], color=col, lw=1)
-        if r['f_peak']:
-            f.axvline(r['f_peak'], color=C['grey'], ls=':', lw=0.8)
-        self._overlay(f, 'psd')
-        if f.get_legend_handles_labels()[0]:
-            f.legend(fontsize=7)
-        f.set(xlabel='frequency', ylabel='PSD (probes)')
-        for ax, s in zip(axes.ravel(), 'abcdef'):
-            _letter(ax, s)
+            ax.axvline(r['i_stationary'] * self.dt, color=C['mark'], ls=':', lw=1)
+        self._overlay(ax, 'energy')
+        ax.set(xlabel='$t$', ylabel=r'$\frac{1}{2}\langle q^{\prime 2}\rangle$', xlim=(0, self.t[-1]))
         return fig
 
-    def plot_pod(self):
-        with plt.rc_context(STYLE):
-            return self._plot_pod()
+    def plot_pdf(self):
+        r = self.results
+        fig, ax = self._single()
+        g = np.linspace(-5, 5, 400)
+        ax.semilogy(g, np.exp(-g ** 2 / 2) / np.sqrt(2 * np.pi), color=C['grey'], lw=1, label='Gaussian')
+        for (xc, h), s, col in zip(r['pdf'], self._sym, SERIES):
+            ax.semilogy(xc, np.where(h > 0, h, np.nan), color=col, label=f'${s}^\\prime$')
+        self._overlay(ax, 'pdf')
+        ax.set(xlabel=r'$q^\prime / q^\prime_\mathrm{rms}$', ylabel='pdf', ylim=(1e-5, 1), xlim=(-5, 5))
+        ax.legend(loc='lower center', handlelength=1.2)
+        return fig
 
-    def _plot_pod(self):
-        """POD energy spectrum and cumulative energy, and the leading modes of the first component."""
+    def plot_spectrum(self):
+        r = self.results
+        fig, ax = self._single()
+        last = np.flatnonzero(r['E'] > 1e-10 * r['E'].max())[-1] + 1
+        ax.loglog(r['k'][:last], r['E'][:last], color=INK)
+        self._overlay(ax, 'E')
+        ax.set(xlabel='$k$', ylabel='$E(k)$')
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
+        return fig
+
+    def plot_correlation(self):
+        r = self.results
+        fig, ax = self._single()
+        for (lag, R, L), name, col in zip(r['corr'], self.axes_names, SERIES):
+            ax.plot(lag, R, color=col, label=f'$\\Delta {name}$, $L_{name}$ = {L:.2g}')
+        ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
+        self._overlay(ax, 'corr')
+        ax.set(xlabel=r'$\Delta$', ylabel=r'$R(\Delta)$')
+        ax.legend(handlelength=1.2)
+        return fig
+
+    def plot_autocorrelation(self):
+        r = self.results
+        fig, ax = self._single()
+        for acf, s, col in zip(r['acf'], self._sym, SERIES):
+            ax.plot(r['acf_lag'], acf, color=col, label=f'${s}$')
+        ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
+        self._overlay(ax, 'acf')
+        ax.set(xlabel=r'$\tau$', ylabel=r'$\rho(\tau)$', xlim=(0, min(r['acf_lag'][-1], 10 * r['T_int'])))
+        if len(ax.get_legend_handles_labels()[0]) > 1:
+            ax.legend(handlelength=1.2)
+        return fig
+
+    def plot_frequency(self):
+        r = self.results
+        fig, ax = self._single()
+        for (fq, s), name, col in zip(r['psd'], self._sym, SERIES):
+            ax.loglog(fq[1:], s[1:], color=col, label=f'${name}$')
+        if r['f_peak']:
+            ax.axvline(r['f_peak'], color=C['grey'], ls=':', lw=0.8)
+        self._overlay(ax, 'psd')
+        ax.set(xlabel='$f$', ylabel=r'$\Phi(f)$')
+        if len(ax.get_legend_handles_labels()[0]) > 1:
+            ax.legend(handlelength=1.2)
+        return fig
+
+    def plot_pod_energy(self):
+        r = self.results
+        fig, ax = self._single()
+        n = np.arange(1, len(r['pod_energy']) + 1)
+        ok = r['pod_energy'] > 1e-12
+        ax.loglog(n[ok], r['pod_energy'][ok], '.', color=INK, ms=2.5)
+        for nq in (r['pod_n90'], r['pod_n99']):
+            ax.axvline(nq, color=C['mark'], ls=':', lw=0.9)
+        self._overlay(ax, 'pod_energy')
+        ax.set(xlabel='$n$', ylabel=r'$\lambda_n / \sum_j \lambda_j$')
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend()
+        return fig
+
+    def plot_pod_modes(self):
         r = self.results
         nm = len(r['pod_modes'])
-        fig, axes = plt.subplots(1, 2 + nm, figsize=(3.0 * (2 + nm), 3.0), layout='constrained')
-        n = np.arange(1, len(r['pod_energy']) + 1)
-        axes[0].semilogy(n, r['pod_energy'], '.', color=INK, ms=3)
-        axes[0].set(xlabel='mode $n$', ylabel=r'$\lambda_n / \sum\lambda$', xscale='log')
-        self._overlay(axes[0], 'pod_energy')
-        if axes[0].get_legend_handles_labels()[0]:
-            axes[0].legend(fontsize=7)
-        cum = np.cumsum(r['pod_energy'])
-        axes[1].semilogx(n, cum, color=INK)
-        for q, nq in ((0.9, r['pod_n90']), (0.99, r['pod_n99'])):
-            axes[1].plot(nq, q, 'o', color=C['mark'], ms=4)
-            axes[1].annotate(f'{q:.0%}: {nq} modes', (nq, q), xytext=(6, -10), textcoords='offset points',
-                             fontsize=7, color=C['mark'])
-        axes[1].set(xlabel='mode $n$', ylabel='cumulative energy', ylim=(0, 1.02))
-        for j, ax in enumerate(axes[2:]):
-            mode = r['pod_modes'][j][..., 0]
-            if len(self.space) == 1:
-                ax.plot(np.arange(self.space[0]) * self.dx[0], mode, color=INK)
-                ax.set(xlabel='$x$', ylabel=rf'$\phi_{j + 1}$')
-            else:
-                norm, cmap = _signed_norm(self._slice(mode))
-                ax.imshow(self._slice(mode), origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
-                ax.set(xlabel='$x$', ylabel='$y$')
-            ax.text(0.98, 0.98, f'mode {j + 1}, {r["pod_energy"][j]:.1%}', transform=ax.transAxes, ha='right',
-                    va='top', fontsize=7, color=INK, bbox=dict(fc='white', ec='none', alpha=0.7, pad=1))
-        for ax, s in zip(axes, 'abcdefgh'):
-            _letter(ax, s)
+        if len(self.space) == 1:
+            x = np.arange(self.space[0]) * self.dx[0]
+            fig, axes = plt.subplots(nm, 1, figsize=(WIDTH, 0.9 + 0.75 * nm), sharex=True, sharey=True,
+                                     layout='constrained')
+            for j, ax in enumerate(np.atleast_1d(axes)):
+                ax.plot(x, r['pod_modes'][j][..., 0], color=INK, lw=1)
+                ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
+                ax.set(ylabel=rf'$\phi_{j + 1}$', xlim=(x[0], x[-1]))
+                ax.text(1.0, 1.0, f'{r["pod_energy"][j]:.1%}', transform=ax.transAxes, ha='right', va='top',
+                        fontsize=9)
+            ax.set_xlabel('$x$')
+            return fig
+        fig, axes = plt.subplots(1, nm, figsize=(WIDTH, 2.1), sharey=True, layout='constrained')
+        for j, ax in enumerate(np.atleast_1d(axes)):
+            mode = self._slice(r['pod_modes'][j][..., 0])
+            norm, cmap = _signed_norm(mode)
+            ax.imshow(mode, origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+            for side in ('top', 'right'):
+                ax.spines[side].set_visible(True)
+            ax.set(xlabel='$x$', ylabel='$y$' if j == 0 else None)
+            ax.text(0.5, 1.03, rf'$\phi_{j + 1}$, {r["pod_energy"][j]:.1%}', transform=ax.transAxes, ha='center',
+                    va='bottom', fontsize=9)
         return fig
 
-    def animate(self, path, n_frames=120, fps=12, dpi=72):
-        with plt.rc_context(STYLE):
-            return self._animate(path, n_frames, fps, dpi)
-
-    def _animate(self, path, n_frames, fps, dpi):
-        """Gif of the first component (mid-plane in 3D); not written for 1D fields (see `plot_fields`)."""
+    def animate(self, path, n_frames=120, fps=12, dpi=100):
+        """Gif of the first component (mid-plane in 3D); not written for 1D fields (see `plot_snapshots`)."""
         from matplotlib.animation import FuncAnimation, PillowWriter
 
         if len(self.space) == 1:
             return None
-        idx = np.linspace(0, self.nt - 1, min(self.nt, n_frames)).astype(int)
-        frames = [self._slice(self.u[i, ..., 0]) for i in idx]
-        norm, cmap = _signed_norm(np.stack(frames))
-        ny, nx = frames[0].shape
-        fig, ax = plt.subplots(figsize=(4.5 * min(2.5, max(0.6, nx / ny)), 4.0), layout='constrained')
-        m = ax.imshow(frames[0], origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
-        fig.colorbar(m, ax=ax, label=f'${self._sym[0]}$', shrink=0.9)
-        ax.set(xlabel='$x$', ylabel='$y$')
-        clock = ax.text(0.98, 1.01, '', transform=ax.transAxes, ha='right', va='bottom', fontsize=8, color=INK)
+        with plt.rc_context(STYLE):
+            idx = np.linspace(0, self.nt - 1, min(self.nt, n_frames)).astype(int)
+            frames = [self._slice(self.u[i, ..., 0]) for i in idx]
+            norm, cmap = _signed_norm(np.stack(frames))
+            ny, nx = frames[0].shape
+            fig, ax = plt.subplots(figsize=(3.2 * min(2.5, max(0.6, nx / ny)) + 0.8, 3.0), layout='constrained')
+            m = ax.imshow(frames[0], origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+            for side in ('top', 'right'):
+                ax.spines[side].set_visible(True)
+            fig.colorbar(m, ax=ax, label=f'${self._sym[0]}$', shrink=0.9)
+            ax.set(xlabel='$x$', ylabel='$y$')
+            clock = ax.text(1.0, 1.02, '', transform=ax.transAxes, ha='right', va='bottom', fontsize=9)
 
-        def draw(n):
-            m.set_data(frames[n])
-            clock.set_text(f't = {idx[n] * self.dt:.4g}')
-            return m, clock
+            def draw(n):
+                m.set_data(frames[n])
+                clock.set_text(f'$t$ = {idx[n] * self.dt:.3g}')
+                return m, clock
 
-        FuncAnimation(fig, draw, frames=len(frames), blit=True).save(path, writer=PillowWriter(fps=fps), dpi=dpi)
-        plt.close(fig)
+            FuncAnimation(fig, draw, frames=len(frames), blit=True).save(path, writer=PillowWriter(fps=fps), dpi=dpi)
+            plt.close(fig)
         return path
 
     # -- report -------------------------------------------------------------------------------------------------
     def report(self, out_dir, gif=True, notes=None):
-        """Write figures, an animation, ``stats.json`` and a self-contained ``index.html`` to `out_dir`.
+        """Write one PNG per quantity, an animation, ``stats.json`` and a self-contained ``index.html`` to `out_dir`.
 
         `notes` is an optional list of HTML snippets (e.g. dataset provenance, how the record was loaded) placed
         under the summary table. Returns the path of the HTML page.
@@ -507,52 +620,23 @@ class FieldSeries:
         if self.results is None:
             self.analyze()
         os.makedirs(out_dir, exist_ok=True)
-        figs = {'fields': (self.plot_fields(), 'Fields'), 'statistics': (self.plot_statistics(), 'Statistics'),
-                'pod': (self.plot_pod(), 'POD')}
-        paths = {}
-        for name, (fig, _) in figs.items():
-            paths[name] = os.path.join(out_dir, f'{name}.png')
-            fig.savefig(paths[name], dpi=150)
-            plt.close(fig)
+        items = []
         if gif and len(self.space) > 1:
-            paths['animation'] = self.animate(os.path.join(out_dir, 'animation.gif'))
+            path = self.animate(os.path.join(out_dir, 'animation.gif'))
+            items.append((path, f'Time evolution of {self._words(0)} over the whole record'
+                          + (', mid-plane of the first axis' if len(self.space) == 3 else '') + '.'))
+        for name, fig, caption in self.figures():
+            path = os.path.join(out_dir, f'{name}.png')
+            fig.savefig(path)
+            plt.close(fig)
+            items.append((path, caption))
         desc = self.results['describe']
         with open(os.path.join(out_dir, 'stats.json'), 'w') as fh:
             json.dump(desc, fh, indent=1, default=float)
         page = os.path.join(out_dir, 'index.html')
         with open(page, 'w') as fh:
-            fh.write(_html(desc, paths, self._captions(), notes or []))
+            fh.write(_html(desc, items, notes or []))
         return page
-
-    def _captions(self):
-        r = self.results
-        nd = len(self.space)
-        fields = (f'(a, c, ...) space-time diagram of each component over the first {min(self.nt, 1500)} snapshots; '
-                  '(b, d, ...) its time-mean and rms profiles over the whole record.'
-                  if nd == 1 else
-                  'Per component: three snapshots spanning the record, then the time mean and the rms.'
-                  + (' Three-dimensional record: mid-plane of the first axis.' if nd == 3 else ''))
-        stats = ('(a) domain-averaged fluctuation energy; (b) pdf of the fluctuations; (c) time-averaged energy '
-                 'spectrum' + (' (shell-averaged)' if nd > 1 else '') + '; (d) two-point correlation per axis with its '
-                 'integral length; (e, f) autocorrelation and Welch spectrum at the probes.')
-        pod = (f'(a) POD energy per mode and (b) cumulative energy ({len(r["pod_energy"])} snapshots); '
-               f'(c) onwards: leading modes of the first component.')
-        return {'fields': fields, 'statistics': stats, 'pod': pod,
-                'animation': 'Time evolution of the first component.'}
-
-
-_LOOK_FOR = [
-    'Energy history: a drift or a jump at the start is a transient to discard; the dashed line marks where '
-    'the domain energy stops drifting.',
-    'Record length in integral times: fewer than about a hundred gives noisy statistics and spectra.',
-    'pdf: tails heavier than the Gaussian point to intermittency; an asymmetric pdf shows up as a non-zero '
-    'skewness.',
-    'Energy spectrum: the decay rate at high wavenumbers tells how well the grid resolves the field; a pile-up '
-    'at the largest wavenumbers means the grid is too coarse or there is aliasing.',
-    'Two-point correlation: a correlation that is still well above zero at half the domain means the box is '
-    'too small for the largest structures.',
-    'POD: the number of modes for 90 % and 99 % of the energy sets the scale of any reduced-order model.',
-]
 
 
 def _img(path):
@@ -569,40 +653,40 @@ def _fmt(v):
     return html.escape(str(v))
 
 
-def _html(desc, paths, captions, notes):
+def _html(desc, items, notes):
     rows = '\n'.join(f'<tr><th>{html.escape(k)}</th><td>{_fmt(v)}</td></tr>' for k, v in desc.items()
                      if k not in ('checks', 'references'))
     checks = '\n'.join(f'<li>{html.escape(c)}</li>' for c in desc.get('checks', []))
-    order = [k for k in ('animation', 'fields', 'statistics', 'pod') if paths.get(k)]
     extra = '\n'.join(f'<p>{n}</p>' for n in notes)
     if desc.get('references'):
         extra += '<p><strong>Reference data</strong> (grey, dashed): ' + '; '.join(
             html.escape(x) for x in desc['references']) + '.</p>'
-    figs = '\n'.join(f'<figure><img src="{_img(paths[k])}" alt="{k}"><figcaption>{html.escape(captions[k])}'
-                     f'</figcaption></figure>' for k in order)
-    look = '\n'.join(f'<li>{html.escape(s)}</li>' for s in _LOOK_FOR)
+    figs = '\n'.join(f'<figure><img src="{_img(p)}" alt="Figure {i}"><figcaption><strong>Figure {i}.</strong> '
+                     f'{cap}</figcaption></figure>' for i, (p, cap) in enumerate(items, 1))
     title = html.escape(str(desc['label']))
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title} first look</title>
+<script>window.MathJax = {{ tex: {{ inlineMath: [['\\\\(', '\\\\)']] }} }};</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
 <style>
-:root {{ --bg: #ffffff; --fg: #222222; --muted: #666666; --rule: #dddddd; --accent: #4477AA; }}
+:root {{ --bg: #ffffff; --fg: #222222; --muted: #666666; --rule: #dddddd; --accent: #0072B2; }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ --bg: #16181c; --fg: #e6e6e6;
-  --muted: #a0a0a0; --rule: #333333; --accent: #66CCEE; }} }}
-:root[data-theme="dark"] {{ --bg: #16181c; --fg: #e6e6e6; --muted: #a0a0a0; --rule: #333333; --accent: #66CCEE; }}
-body {{ background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; margin: 0 auto;
-  max-width: 1100px; padding: 24px 16px; }}
-h1 {{ font-size: 1.5rem; margin: 0 0 4px; }} h2 {{ font-size: 1.1rem; margin-top: 32px; color: var(--accent); }}
-table {{ border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }}
+  --muted: #a0a0a0; --rule: #333333; --accent: #56B4E9; }} }}
+:root[data-theme="dark"] {{ --bg: #16181c; --fg: #e6e6e6; --muted: #a0a0a0; --rule: #333333; --accent: #56B4E9; }}
+body {{ background: var(--bg); color: var(--fg); font: 16px/1.55 Georgia, 'Times New Roman', serif; margin: 0 auto;
+  max-width: 860px; padding: 24px 16px; }}
+h1 {{ font-size: 1.6rem; margin: 0 0 4px; }} h2 {{ font-size: 1.15rem; margin-top: 36px; color: var(--accent); }}
+table {{ border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 0.92rem; }}
 th, td {{ text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }}
-th {{ font-weight: 500; color: var(--muted); width: 40%; }}
-figure {{ margin: 20px 0; }} img {{ max-width: 100%; background: #ffffff; border-radius: 4px; }}
-figcaption {{ color: var(--muted); font-size: 0.9rem; margin-top: 6px; }}
+th {{ font-weight: normal; color: var(--muted); width: 45%; }}
+figure {{ margin: 28px 0; }} img {{ display: block; max-width: 100%; margin: 0 auto; background: #ffffff;
+  border-radius: 3px; }}
+figcaption {{ font-size: 0.93rem; margin-top: 8px; }}
 .wrap {{ overflow-x: auto; }}
 </style></head><body>
 <h1>{title}</h1>
-<p style="color: var(--muted)">First look at the record: statistics, spectra, correlations and POD energy, computed by
-<code>ntsa.fields.FieldSeries</code>.</p>
+<p style="color: var(--muted)">First look at the record, computed by <code>ntsa.fields.FieldSeries</code>.</p>
 <h2>Checks</h2>
 <ul>{checks}</ul>
 <h2>Summary</h2>
@@ -610,7 +694,5 @@ figcaption {{ color: var(--muted); font-size: 0.9rem; margin-top: 6px; }}
 {extra}
 <h2>Figures</h2>
 {figs}
-<h2>What to look for</h2>
-<ul>{look}</ul>
 </body></html>
 """
