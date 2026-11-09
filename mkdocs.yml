@@ -69,6 +69,7 @@ nav:
           - lyapunov: api/tools/lyapunov.md
       - ntsa.characterize: api/characterize.md
       - ntsa.data: api/data.md
+      - ntsa.fields: api/fields.md
   - Tutorials:
       - Notebooks: tutorials.md
       - Worked example — torus dimensions: torus.md

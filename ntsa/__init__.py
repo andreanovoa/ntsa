@@ -10,6 +10,8 @@
   (``python -m ntsa.characterize``).
 - `ntsa.data` — `DataSeries`, the equation-free pipeline for raw measured series
   (no model needed; Lyapunov/bifurcation methods are bypassed).
+- `ntsa.fields` — `FieldSeries`, the first look at a gridded record u(t, x): point
+  statistics, spectra, correlations, POD energy, data checks and an HTML report.
 
 Works with any model implementing the `dynamodels.Model` interface (see the
 "Model protocol" section of the README) — `dynamodels` is the reference
@@ -18,4 +20,4 @@ implementation used by the demos and tests, but any duck-type is accepted.
 Reference: Kantz & Schreiber, *Nonlinear Time Series Analysis* (2nd ed., CUP 2004).
 """
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
