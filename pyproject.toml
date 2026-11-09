@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ntsa"
-version = "0.3.1"
-description = "Nonlinear time-series analysis for dynamical-system models: Lyapunov spectra, delay embeddings, regime classification, bifurcation sweeps"
+version = "0.4.0"
+description = "Nonlinear time-series analysis for dynamical-system models: Lyapunov spectra, delay embeddings, regime classification, bifurcation sweeps, first-look characterisation of spatio-temporal fields"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
