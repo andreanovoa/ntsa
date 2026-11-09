@@ -31,8 +31,10 @@ from scipy.stats import kurtosis, skew
 
 from ntsa.tools import stationary_start
 
-#: figure style of the user's papers (washout-free ESN-DA): serif Termes/STIX, no top and right spines
-STYLE = {'font.family': 'serif', 'font.serif': ['TeX Gyre Termes', 'STIXGeneral'], 'mathtext.fontset': 'stix',
+#: figure style of the user's papers: Times (text and maths, STIX for missing symbols), no top and right spines
+STYLE = {'font.family': 'serif', 'font.serif': ['Times New Roman', 'Times', 'TeX Gyre Termes', 'STIXGeneral'],
+         'mathtext.fontset': 'custom', 'mathtext.rm': 'Times New Roman', 'mathtext.it': 'Times New Roman:italic',
+         'mathtext.bf': 'Times New Roman:bold', 'mathtext.fallback': 'stix',
          'pdf.fonttype': 42, 'font.size': 10, 'legend.fontsize': 8, 'axes.labelsize': 10,
          'xtick.labelsize': 9, 'ytick.labelsize': 9, 'lines.linewidth': 1.2, 'savefig.dpi': 200, 'axes.spines.top': False,
          'axes.spines.right': False, 'legend.frameon': False}
@@ -44,6 +46,11 @@ C_REF = '0.45'
 WIDTH = 7.2                                         # inches: full text width of the papers
 SERIES = [C[k] for k in ('blue', 'orange', 'green', 'vermilion', 'pink', 'sky')]
 REF_STYLE = dict(color=C_REF, ls='--', lw=1.2, zorder=1)
+#: dark-background variant of STYLE (the report renders every figure in both)
+DARK_BG, DARK_FG = '#16181c', '#e6e6e6'
+DARK = {'figure.facecolor': DARK_BG, 'axes.facecolor': DARK_BG, 'savefig.facecolor': DARK_BG, 'text.color': DARK_FG,
+        'axes.labelcolor': DARK_FG, 'axes.edgecolor': DARK_FG, 'xtick.color': DARK_FG, 'ytick.color': DARK_FG,
+        'legend.labelcolor': DARK_FG}
 #: quantities a reference curve can be laid over, and the panel that holds each
 REFERENCE_PANELS = ('energy', 'pdf', 'E', 'corr', 'acf', 'psd', 'pod_energy', 'mean', 'rms')
 
@@ -131,11 +138,25 @@ class FieldSeries:
             raise ValueError(f'quantity must be one of {REFERENCE_PANELS}, got {quantity!r}')
         self.references.append(dict(quantity=quantity, x=np.asarray(x, float), y=np.asarray(y, float), label=label))
 
+    _dark = False
+
+    @property
+    def _ink(self):
+        return DARK_FG if self._dark else INK
+
+    @property
+    def _series(self):
+        """Line colours; on a dark background the first is sky blue (Okabe-Ito blue is too dim there)."""
+        return [C['sky'], *SERIES[1:-1], '#F0E442'] if self._dark else SERIES
+
+    def _rc(self):
+        return {**STYLE, **DARK} if self._dark else STYLE
+
     def _overlay(self, ax, quantity, swap=False):
         for ref in self.references:
             if ref['quantity'] == quantity:
                 x, y = (ref['y'], ref['x']) if swap else (ref['x'], ref['y'])
-                ax.plot(x, y, label=ref['label'], **REF_STYLE)
+                ax.plot(x, y, label=ref['label'], **{**REF_STYLE, 'color': '0.65' if self._dark else C_REF})
 
     # -- geometry -----------------------------------------------------------------------------------------------
     @property
@@ -281,8 +302,9 @@ class FieldSeries:
             out.append(f'{n_bad} non-finite values: mask or interpolate them first.')
         if r['acf_lag1'] < 0.5:
             out.append(f'Consecutive snapshots are nearly uncorrelated (lag-one autocorrelation {r["acf_lag1"]:.2f}): '
-                       'the record is not time-resolved, or it is shuffled. Time statistics (integral time, '
-                       'spectra in frequency) are not meaningful until the order and the time step are checked.')
+                       'they are saved too far apart in time to follow the evolution, or the record is shuffled. '
+                       'Check the snapshot spacing (the stored dt may be the solver step) and the order; save '
+                       'snapshots more often for time statistics, animations or time-stepping models.')
         elif self.nt * self.dt < 100 * r['T_int']:
             out.append(f'The record spans {self.nt * self.dt / r["T_int"]:.0f} integral times (fewer than 100): '
                        'expect noisy statistics.')
@@ -344,13 +366,15 @@ class FieldSeries:
         return m
 
     # -- figures: one per quantity ------------------------------------------------------------------------------
-    def figures(self):
-        """Ordered list of (name, figure, caption): one figure per quantity, each explained by its caption."""
+    def figures(self, dark=False):
+        """Ordered list of (name, figure, caption): one figure per quantity, each explained by its caption.
+        `dark` draws them for a dark background."""
+        self._dark = dark
         if self.results is None:
             self.analyze()
         r, nd = self.results, len(self.space)
         out = []
-        with plt.rc_context(STYLE):
+        with plt.rc_context(self._rc()):
             out.append(('snapshots', self.plot_snapshots(), self._cap_snapshots()))
             out.append(('mean_rms', self.plot_mean_rms(),
                         ('Time mean (top) and rms of the fluctuations (bottom) along the domain.' if nd == 1 else
@@ -445,7 +469,7 @@ class FieldSeries:
         if len(self.space) == 1:
             x = np.arange(self.space[0]) * self.dx[0]
             fig, (a, b) = plt.subplots(2, 1, figsize=(WIDTH, 3.2), sharex=True, layout='constrained')
-            for c, col in zip(range(nc), SERIES):
+            for c, col in zip(range(nc), self._series):
                 a.plot(x, r['mean'][:, c], color=col, label=f'${self._sym[c]}$')
                 b.plot(x, r['rms'][:, c], color=col)
             self._overlay(a, 'mean')
@@ -473,9 +497,9 @@ class FieldSeries:
         r = self.results
         fig, ax = plt.subplots(figsize=(WIDTH, 2.2), layout='constrained')
         if r['acf_lag1'] >= 0.5:
-            ax.plot(self.t, r['energy_t'], color=INK, lw=0.7)
+            ax.plot(self.t, r['energy_t'], color=self._ink, lw=0.7)
         else:
-            ax.plot(self.t, r['energy_t'], '.', color=INK, ms=1.5, mec='none')
+            ax.plot(self.t, r['energy_t'], 'o', color=self._series[0], ms=2.5, mec='none')
         if r['i_stationary']:
             ax.axvline(r['i_stationary'] * self.dt, color=C['mark'], ls=':', lw=1)
         self._overlay(ax, 'energy')
@@ -487,7 +511,7 @@ class FieldSeries:
         fig, ax = self._single()
         g = np.linspace(-5, 5, 400)
         ax.semilogy(g, np.exp(-g ** 2 / 2) / np.sqrt(2 * np.pi), color=C['grey'], lw=1, label='Gaussian')
-        for (xc, h), s, col in zip(r['pdf'], self._sym, SERIES):
+        for (xc, h), s, col in zip(r['pdf'], self._sym, self._series):
             ax.semilogy(xc, np.where(h > 0, h, np.nan), color=col, label=f'${s}^\\prime$')
         self._overlay(ax, 'pdf')
         ax.set(xlabel=r'$q^\prime / q^\prime_\mathrm{rms}$', ylabel='pdf', ylim=(1e-5, 1), xlim=(-5, 5))
@@ -498,7 +522,7 @@ class FieldSeries:
         r = self.results
         fig, ax = self._single()
         last = np.flatnonzero(r['E'] > 1e-10 * r['E'].max())[-1] + 1
-        ax.loglog(r['k'][:last], r['E'][:last], color=INK)
+        ax.loglog(r['k'][:last], r['E'][:last], color=self._ink)
         self._overlay(ax, 'E')
         ax.set(xlabel='$k$', ylabel='$E(k)$')
         if ax.get_legend_handles_labels()[0]:
@@ -508,7 +532,7 @@ class FieldSeries:
     def plot_correlation(self):
         r = self.results
         fig, ax = self._single()
-        for (lag, R, L), name, col in zip(r['corr'], self.axes_names, SERIES):
+        for (lag, R, L), name, col in zip(r['corr'], self.axes_names, self._series):
             ax.plot(lag, R, color=col, label=f'$\\Delta {name}$, $L_{name}$ = {L:.2g}')
         ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
         self._overlay(ax, 'corr')
@@ -519,7 +543,7 @@ class FieldSeries:
     def plot_autocorrelation(self):
         r = self.results
         fig, ax = self._single()
-        for acf, s, col in zip(r['acf'], self._sym, SERIES):
+        for acf, s, col in zip(r['acf'], self._sym, self._series):
             ax.plot(r['acf_lag'], acf, color=col, label=f'${s}$')
         ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
         self._overlay(ax, 'acf')
@@ -531,7 +555,7 @@ class FieldSeries:
     def plot_frequency(self):
         r = self.results
         fig, ax = self._single()
-        for (fq, s), name, col in zip(r['psd'], self._sym, SERIES):
+        for (fq, s), name, col in zip(r['psd'], self._sym, self._series):
             ax.loglog(fq[1:], s[1:], color=col, label=f'${name}$')
         if r['f_peak']:
             ax.axvline(r['f_peak'], color=C['grey'], ls=':', lw=0.8)
@@ -546,7 +570,7 @@ class FieldSeries:
         fig, ax = self._single()
         n = np.arange(1, len(r['pod_energy']) + 1)
         ok = r['pod_energy'] > 1e-12
-        ax.loglog(n[ok], r['pod_energy'][ok], '.', color=INK, ms=2.5)
+        ax.loglog(n[ok], r['pod_energy'][ok], '.', color=self._ink, ms=2.5)
         for nq in (r['pod_n90'], r['pod_n99']):
             ax.axvline(nq, color=C['mark'], ls=':', lw=0.9)
         self._overlay(ax, 'pod_energy')
@@ -563,7 +587,7 @@ class FieldSeries:
             fig, axes = plt.subplots(nm, 1, figsize=(WIDTH, 0.9 + 0.75 * nm), sharex=True, sharey=True,
                                      layout='constrained')
             for j, ax in enumerate(np.atleast_1d(axes)):
-                ax.plot(x, r['pod_modes'][j][..., 0], color=INK, lw=1)
+                ax.plot(x, r['pod_modes'][j][..., 0], color=self._ink, lw=1)
                 ax.axhline(0, color=C['grey'], lw=0.6, zorder=0)
                 ax.set(ylabel=rf'$\phi_{j + 1}$', xlim=(x[0], x[-1]))
                 ax.text(1.0, 1.0, f'{r["pod_energy"][j]:.1%}', transform=ax.transAxes, ha='right', va='top',
@@ -582,14 +606,26 @@ class FieldSeries:
                     va='bottom', fontsize=9)
         return fig
 
-    def animate(self, path, n_frames=120, fps=12, dpi=100):
-        """Gif of the first component (mid-plane in 3D); not written for 1D fields (see `plot_snapshots`)."""
+    def animate(self, path, n_frames=150, fps=None, dpi=100, dark=False):
+        """Gif of the first component (mid-plane in 3D); not written for 1D fields (see `plot_snapshots`).
+
+        Consecutive frames are a fixed stride apart, chosen so that an integral time spans about eight frames
+        (every snapshot when the record is not time-resolved), from the start of the record: the gif follows the
+        evolution rather than jumping across the whole record. `fps` defaults to 8, or 3 for a record that is not
+        time-resolved, where consecutive frames are unrelated.
+        """
         from matplotlib.animation import FuncAnimation, PillowWriter
 
         if len(self.space) == 1:
             return None
-        with plt.rc_context(STYLE):
-            idx = np.linspace(0, self.nt - 1, min(self.nt, n_frames)).astype(int)
+        self._dark = dark
+        with plt.rc_context(self._rc()):
+            r = self.results
+            resolved = r['acf_lag1'] >= 0.5
+            stride = max(1, int(r['T_int'] / (8 * self.dt))) if resolved else 1
+            fps = fps or (8 if resolved else 3)
+            idx = np.arange(0, self.nt, stride)[:n_frames]
+            self._gif_span = (idx, fps)
             frames = [self._slice(self.u[i, ..., 0]) for i in idx]
             norm, cmap = _signed_norm(np.stack(frames))
             ny, nx = frames[0].shape
@@ -622,14 +658,27 @@ class FieldSeries:
         os.makedirs(out_dir, exist_ok=True)
         items = []
         if gif and len(self.space) > 1:
-            path = self.animate(os.path.join(out_dir, 'animation.gif'))
-            items.append((path, f'Time evolution of {self._words(0)} over the whole record'
-                          + (', mid-plane of the first axis' if len(self.space) == 3 else '') + '.'))
-        for name, fig, caption in self.figures():
-            path = os.path.join(out_dir, f'{name}.png')
-            fig.savefig(path)
-            plt.close(fig)
-            items.append((path, caption))
+            paths = [self.animate(os.path.join(out_dir, f'animation{sfx}.gif'), dark=dark)
+                     for sfx, dark in (('', False), ('_dark', True))]
+            idx, fps = self._gif_span
+            items.append((*paths, f'Time evolution of {self._words(0)}'
+                          + (', mid-plane of the first axis' if len(self.space) == 3 else '')
+                          + f': {len(idx)} frames from t = 0 to {idx[-1] * self.dt:.3g}, every '
+                          + (f'{idx[1] - idx[0]} snapshots' if len(idx) > 1 and idx[1] - idx[0] > 1 else 'snapshot')
+                          + f', at {fps} frames per second'
+                          + ('. The snapshots are too far apart in time to follow the evolution (see the checks).'
+                             if self.results['acf_lag1'] < 0.5 else '.')))
+        rendered = {}
+        for sfx, dark in (('', False), ('_dark', True)):
+            figs = self.figures(dark=dark)
+            with plt.rc_context(self._rc()):         # fonts and colours resolve at draw time: save inside the style
+                for name, fig, caption in figs:
+                    path = os.path.join(out_dir, f'{name}{sfx}.png')
+                    fig.savefig(path)
+                    plt.close(fig)
+                    rendered.setdefault(name, [caption]).append(path)
+        self._dark = False
+        items += [(light, dark, caption) for caption, light, dark in rendered.values()]
         desc = self.results['describe']
         with open(os.path.join(out_dir, 'stats.json'), 'w') as fh:
             json.dump(desc, fh, indent=1, default=float)
@@ -661,8 +710,9 @@ def _html(desc, items, notes):
     if desc.get('references'):
         extra += '<p><strong>Reference data</strong> (grey, dashed): ' + '; '.join(
             html.escape(x) for x in desc['references']) + '.</p>'
-    figs = '\n'.join(f'<figure><img src="{_img(p)}" alt="Figure {i}"><figcaption><strong>Figure {i}.</strong> '
-                     f'{cap}</figcaption></figure>' for i, (p, cap) in enumerate(items, 1))
+    figs = '\n'.join(f'<figure><img class="light" src="{_img(lt)}" alt="Figure {i}"><img class="dark" '
+                     f'src="{_img(dk)}" alt="Figure {i}"><figcaption><strong>Figure {i}.</strong> {cap}</figcaption>'
+                     f'</figure>' for i, (lt, dk, cap) in enumerate(items, 1))
     title = html.escape(str(desc['label']))
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -674,17 +724,25 @@ def _html(desc, items, notes):
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ --bg: #16181c; --fg: #e6e6e6;
   --muted: #a0a0a0; --rule: #333333; --accent: #56B4E9; }} }}
 :root[data-theme="dark"] {{ --bg: #16181c; --fg: #e6e6e6; --muted: #a0a0a0; --rule: #333333; --accent: #56B4E9; }}
-body {{ background: var(--bg); color: var(--fg); font: 16px/1.55 Georgia, 'Times New Roman', serif; margin: 0 auto;
+body {{ background: var(--bg); color: var(--fg); font: 17px/1.55 'Times New Roman', Times, serif; margin: 0 auto;
   max-width: 860px; padding: 24px 16px; }}
 h1 {{ font-size: 1.6rem; margin: 0 0 4px; }} h2 {{ font-size: 1.15rem; margin-top: 36px; color: var(--accent); }}
 table {{ border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 0.92rem; }}
 th, td {{ text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }}
 th {{ font-weight: normal; color: var(--muted); width: 45%; }}
-figure {{ margin: 28px 0; }} img {{ display: block; max-width: 100%; margin: 0 auto; background: #ffffff;
-  border-radius: 3px; }}
+figure {{ margin: 28px 0; }} img {{ display: block; max-width: 100%; margin: 0 auto; border-radius: 3px; }}
+img.dark {{ display: none; }}
+@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) img.light {{ display: none; }}
+  :root:not([data-theme="light"]) img.dark {{ display: block; }} }}
+:root[data-theme="dark"] img.light {{ display: none; }} :root[data-theme="dark"] img.dark {{ display: block; }}
+.theme {{ float: right; font: 13px system-ui, sans-serif; }}
+.theme button {{ background: none; color: var(--muted); border: 1px solid var(--rule); padding: 3px 9px;
+  cursor: pointer; }} .theme button[aria-pressed="true"] {{ color: var(--fg); border-color: var(--accent); }}
 figcaption {{ font-size: 0.93rem; margin-top: 8px; }}
 .wrap {{ overflow-x: auto; }}
 </style></head><body>
+<div class="theme" role="group" aria-label="Background">
+<button data-t="light">Light</button><button data-t="dark">Dark</button><button data-t="auto">Auto</button></div>
 <h1>{title}</h1>
 <p style="color: var(--muted)">First look at the record, computed by <code>ntsa.fields.FieldSeries</code>.</p>
 <h2>Checks</h2>
@@ -694,5 +752,19 @@ figcaption {{ font-size: 0.93rem; margin-top: 8px; }}
 {extra}
 <h2>Figures</h2>
 {figs}
+<script>
+(function () {{
+  var root = document.documentElement, buttons = document.querySelectorAll('.theme button');
+  function apply(t) {{
+    if (t === 'auto') {{ delete root.dataset.theme; }} else {{ root.dataset.theme = t; }}
+    buttons.forEach(function (b) {{ b.setAttribute('aria-pressed', String(b.dataset.t === t)); }});
+    try {{ localStorage.setItem('ntsa-theme', t); }} catch (e) {{}}
+  }}
+  var saved = 'auto';
+  try {{ saved = localStorage.getItem('ntsa-theme') || 'auto'; }} catch (e) {{}}
+  buttons.forEach(function (b) {{ b.addEventListener('click', function () {{ apply(b.dataset.t); }}); }});
+  apply(saved);
+}})();
+</script>
 </body></html>
 """

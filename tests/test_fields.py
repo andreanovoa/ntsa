@@ -59,9 +59,10 @@ def test_2d_components_and_shuffle_check(tmp_path):
     assert stats['shape (Nt, space, components)'] == [nt, [ny, nx], ['u', 'v']]
     text = open(page).read()
     assert text.count('<figcaption>') == 11                  # gif + 10 figures, each with its caption
+    assert text.count('class="dark"') == 11                 # every figure also drawn for a dark background
 
     shuffled = FieldSeries(u[rng.permutation(nt)], dt=0.05, components=('u', 'v')).analyze()
-    assert any('not time-resolved' in c for c in shuffled['checks'])
+    assert any('too far apart in time' in c for c in shuffled['checks'])
 
 
 def test_nonperiodic_and_transient_checks():
