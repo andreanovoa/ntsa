@@ -105,6 +105,13 @@ class FieldSeries:
         Reference data laid over the figures, grey and dashed, e.g. published DNS statistics. Each entry has
         ``quantity`` (one of `REFERENCE_PANELS`), ``x`` and ``y`` in the units of the record, and ``label``
         (the source, cited as author and year). `add_reference` appends one.
+    origin : float or sequence of float
+        Coordinate of the first grid point per space axis (a scalar applies to every axis), so that the maps and
+        the 1D axes are labelled in the coordinates of the flow rather than from zero.
+    bodies : sequence of (x, y, radius), optional
+        Circular solid bodies (e.g. cylinders) in the coordinates of the two plotted axes (x horizontal), drawn
+        filled and outlined on every 2D map and on the animation. The record should hold the body's own value
+        inside them (e.g. zero velocity); the statistics do not mask them.
     """
 
     u: np.ndarray
@@ -115,6 +122,8 @@ class FieldSeries:
     periodic: object = True
     max_snapshots: int = 2000
     references: list = field(default_factory=list)
+    origin: object = 0.0
+    bodies: list = field(default_factory=list)
     results: dict = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
@@ -131,6 +140,10 @@ class FieldSeries:
             raise ValueError(f'expected 1 to 3 space dimensions, got shape {self.u.shape}')
         self.dx = tuple(np.broadcast_to(np.asarray(self.dx, dtype=float), (nd,)))
         self.periodic = tuple(np.broadcast_to(np.asarray(self.periodic, dtype=bool), (nd,)))
+        self.origin = tuple(np.broadcast_to(np.asarray(self.origin, dtype=float), (nd,)))
+        self.bodies = [tuple(float(v) for v in b) for b in self.bodies]
+        if any(len(b) != 3 for b in self.bodies):
+            raise ValueError('bodies are (x, y, radius) circles')
 
     def add_reference(self, quantity, x, y, label):
         """Lay a reference curve y(x) over the panel of `quantity` (see `REFERENCE_PANELS`)."""
@@ -350,7 +363,16 @@ class FieldSeries:
     # -- figures ------------------------------------------------------------------------------------------------
     def _extent(self):
         ny, nx = self.space[-2:] if len(self.space) > 1 else (1, self.space[0])
-        return [0, nx * self.dx[-1], 0, ny * self.dx[-2] if len(self.space) > 1 else 1]
+        x0 = self.origin[-1]
+        y0 = self.origin[-2] if len(self.space) > 1 else 0.0
+        return [x0, x0 + nx * self.dx[-1], y0, y0 + (ny * self.dx[-2] if len(self.space) > 1 else 1)]
+
+    def _draw_bodies(self, ax):
+        """Fill and outline the solid bodies on a 2D map."""
+        from matplotlib.patches import Circle
+
+        for x, y, radius in self.bodies:
+            ax.add_patch(Circle((x, y), radius, facecolor=C['grey'], edgecolor=self._ink, lw=0.8, zorder=3))
 
     def _slice(self, a):
         """2D view of a spatial array (mid-plane of the first axis in 3D)."""
@@ -360,6 +382,7 @@ class FieldSeries:
         """Image of a 2D field with its colour bar; signed fields on RdBu_r centred on zero."""
         norm, cm = (plt.Normalize(np.nanmin(a), np.nanmax(a)), cmap) if cmap else _signed_norm(a)
         m = ax.imshow(a, origin='lower', extent=self._extent(), norm=norm, cmap=cm)
+        self._draw_bodies(ax)
         for side in ('top', 'right'):
             ax.spines[side].set_visible(True)
         fig.colorbar(m, ax=ax, label=label, shrink=0.85, aspect=20)
@@ -436,7 +459,7 @@ class FieldSeries:
         nc, nd = len(self.components), len(self.space)
         if nd == 1:
             fig, axes = plt.subplots(nc, 1, figsize=(WIDTH, 2.4 * nc), squeeze=False, layout='constrained')
-            x = np.arange(self.space[0]) * self.dx[0]
+            x = self.origin[0] + np.arange(self.space[0]) * self.dx[0]
             n = min(self.nt, 1500)
             for c, ax in enumerate(axes[:, 0]):
                 norm, cmap = _signed_norm(self.u[:n, :, c])
@@ -453,6 +476,7 @@ class FieldSeries:
             norm, cmap = _signed_norm(np.stack(snaps))
             for ax, snap, i in zip(axes[c], snaps, times):
                 m = ax.imshow(snap, origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+                self._draw_bodies(ax)
                 for side in ('top', 'right'):
                     ax.spines[side].set_visible(True)
                 if c == 0:
@@ -467,7 +491,7 @@ class FieldSeries:
     def plot_mean_rms(self):
         r, nc = self.results, len(self.components)
         if len(self.space) == 1:
-            x = np.arange(self.space[0]) * self.dx[0]
+            x = self.origin[0] + np.arange(self.space[0]) * self.dx[0]
             fig, (a, b) = plt.subplots(2, 1, figsize=(WIDTH, 3.2), sharex=True, layout='constrained')
             for c, col in zip(range(nc), self._series):
                 a.plot(x, r['mean'][:, c], color=col, label=f'${self._sym[c]}$')
@@ -583,7 +607,7 @@ class FieldSeries:
         r = self.results
         nm = len(r['pod_modes'])
         if len(self.space) == 1:
-            x = np.arange(self.space[0]) * self.dx[0]
+            x = self.origin[0] + np.arange(self.space[0]) * self.dx[0]
             fig, axes = plt.subplots(nm, 1, figsize=(WIDTH, 0.9 + 0.75 * nm), sharex=True, sharey=True,
                                      layout='constrained')
             for j, ax in enumerate(np.atleast_1d(axes)):
@@ -599,6 +623,7 @@ class FieldSeries:
             mode = self._slice(r['pod_modes'][j][..., 0])
             norm, cmap = _signed_norm(mode)
             ax.imshow(mode, origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+            self._draw_bodies(ax)
             for side in ('top', 'right'):
                 ax.spines[side].set_visible(True)
             ax.set(xlabel='$x$', ylabel='$y$' if j == 0 else None)
@@ -631,6 +656,7 @@ class FieldSeries:
             ny, nx = frames[0].shape
             fig, ax = plt.subplots(figsize=(3.2 * min(2.5, max(0.6, nx / ny)) + 0.8, 3.0), layout='constrained')
             m = ax.imshow(frames[0], origin='lower', extent=self._extent(), norm=norm, cmap=cmap)
+            self._draw_bodies(ax)
             for side in ('top', 'right'):
                 ax.spines[side].set_visible(True)
             fig.colorbar(m, ax=ax, label=f'${self._sym[0]}$', shrink=0.9)

@@ -93,3 +93,20 @@ def test_reference_overlay(tmp_path):
     assert 'Author et al. (2020)' in labels
     page = open(fs.report(tmp_path / 'r', gif=False)).read()
     assert 'Author et al. (2020)' in page
+
+
+def test_origin_and_bodies_on_the_maps():
+    """The maps are labelled from `origin` and every 2D map draws the bodies."""
+    from matplotlib.patches import Circle
+
+    rng = np.random.default_rng(3)
+    u = rng.normal(size=(40, 12, 20, 2))
+    fs = FieldSeries(u, dt=0.1, dx=0.5, components=('u', 'v'), periodic=False, origin=(-3.0, 10.0),
+                     bodies=[(12.0, 0.0, 0.5)])
+    assert fs._extent() == [10.0, 20.0, -3.0, 3.0]
+    figs = {name: fig for name, fig, _ in fs.figures()}
+    for name in ('snapshots', 'pod_modes'):
+        circles = [p for ax in figs[name].axes for p in ax.patches if isinstance(p, Circle)]
+        assert circles and all(c.center == (12.0, 0.0) and c.radius == 0.5 for c in circles)
+    with pytest.raises(ValueError, match='bodies'):
+        FieldSeries(u, dt=0.1, components=('u', 'v'), bodies=[(1.0, 2.0)])
