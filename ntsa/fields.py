@@ -436,9 +436,10 @@ class FieldSeries:
                                 f'; the dotted line marks the dominant frequency, f = {r["f_peak"]:.3g}'
                                 if r['f_peak'] else '; there is no dominant frequency (broadband spectrum)') + '.'))
             out.append(('pod_energy', self.plot_pod_energy(),
-                        f'Energy fraction of each POD mode (snapshot method, {min(self.nt, self.max_snapshots)} '
-                        f'snapshots); {r["pod_n90"]} modes hold 90 % of the fluctuation energy and {r["pod_n99"]} '
-                        'hold 99 % (dotted lines). These numbers set the scale of any reduced-order model.'))
+                        f'(a) Energy fraction of each POD mode and (b) cumulative fraction of the first n modes '
+                        f'(snapshot method, {min(self.nt, self.max_snapshots)} snapshots); {r["pod_n90"]} modes hold '
+                        f'90 % of the fluctuation energy and {r["pod_n99"]} hold 99 % (dotted lines). These numbers set '
+                        'the scale of any reduced-order model.'))
             out.append(('pod_modes', self.plot_pod_modes(),
                         f'Leading POD modes of {self._words(0)}, with their energy fraction. Modes in pairs with '
                         'equal energy and shifted shapes are travelling structures.'))
@@ -590,15 +591,22 @@ class FieldSeries:
         return fig
 
     def plot_pod_energy(self):
+        """(a) the energy fraction of each POD mode; (b) the cumulative fraction, on the same modes."""
         r = self.results
-        fig, ax = self._single()
+        fig, (ax, bx) = plt.subplots(2, 1, figsize=(WIDTH / 2, 4.2), sharex=True, layout='constrained')
         n = np.arange(1, len(r['pod_energy']) + 1)
         ok = r['pod_energy'] > 1e-12
         ax.loglog(n[ok], r['pod_energy'][ok], '.', color=self._ink, ms=2.5)
-        for nq in (r['pod_n90'], r['pod_n99']):
-            ax.axvline(nq, color=C['mark'], ls=':', lw=0.9)
+        bx.semilogx(n, np.cumsum(r['pod_energy']), color=self._ink, lw=1)
+        for q, nq in ((0.90, r['pod_n90']), (0.99, r['pod_n99'])):
+            for a in (ax, bx):
+                a.axvline(nq, color=C['mark'], ls=':', lw=0.9)
+            bx.axhline(q, color=C['mark'], ls=':', lw=0.9)
         self._overlay(ax, 'pod_energy')
-        ax.set(xlabel='$n$', ylabel=r'$\lambda_n / \sum_j \lambda_j$')
+        ax.set(ylabel=r'$\lambda_n / \sum_j \lambda_j$')
+        bx.set(xlabel='$n$', ylabel=r'$\sum_{j \leq n} \lambda_j / \sum_j \lambda_j$', ylim=(0, 1.02))
+        _letter(ax, 'a')
+        _letter(bx, 'b')
         if ax.get_legend_handles_labels()[0]:
             ax.legend()
         return fig
