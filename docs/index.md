@@ -30,7 +30,7 @@ without the model — $\lambda_1 = 0.97 \pm 0.06$ (true 0.906), classified chaot
 
 - [`dynamodels`](https://andreanovoa.github.io/dynamodels/) — the reference Model
   implementation (physical models used by the demos and tests).
-- [romda](https://github.com/andreanovoa/real-time-bias-aware-DA) — real-time
+- [romda](https://github.com/andreanovoa/romda) — real-time
   bias-aware data assimilation built on both packages.
 
 ## Citation
